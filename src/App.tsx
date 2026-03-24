@@ -4,7 +4,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { Landing } from './pages/Landing';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
-import { Dashboard } from './pages/Dashboard';
+import  Dashboard  from './pages/Dashboard';
 import { Upload } from './pages/Upload';
 import { Report } from './pages/Report';
 import { History } from './pages/History';
