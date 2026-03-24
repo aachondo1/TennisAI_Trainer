@@ -110,8 +110,7 @@ export function Upload() {
           diagnostico_global: result.reporte?.diagnostico_global || '',
           reporte_narrativo: result.reporte?.reporte_narrativo_completo || '',
           scores_detalle: result.reporte?.scores_detalle || {},
-          prioridades_mejora: result.reporte?.prioridades_mejora || [],
-          plan_ejercicios: result.plan_ejercicios || {}
+          plan_ejercicios: result.plan_ejercicios || []
         })
         .select();
 
