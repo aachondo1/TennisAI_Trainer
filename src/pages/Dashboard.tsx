@@ -9,6 +9,7 @@ import {
   Target, Calendar, Zap, Eye, EyeOff, Info, Upload,
   Activity, Award, BarChart2, BookOpen, Dumbbell
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 /* ─── DESIGN TOKENS ─────────────────────────────────────────── */
 const C = {
