@@ -165,198 +165,91 @@ export default function TennisReportDashboard() {
   const [radarStroke, setRadarStroke]       = useState('todos');
 
   /* ── DATA ── */
-  useEffect(() => {
-    const exampleData = {
-      currentSession: {
-        date: new Date().toLocaleDateString('es-ES'),
-        globalScore: 72,
-        nivel: 'Avanzado',
-        sessionType: 'mezcla',
-        duration: '45:30',
-        cameraQuality: 'buena',
-        diagnostico: 'Técnica sólida con rotación de hombros consistente. El principal área de mejora es la extensión completa en el punto de impacto, especialmente en backhand. Velocidad de pelota está dentro de rango normal para tu nivel.',
-        golpes: {
-          forehand: {
-            score: 75, nivel: 'Avanzado',
-            scores: {
-              preparacion:    { score: 16, max: 20 },
-              punto_impacto:  { score: 15, max: 20 },
-              follow_through: { score: 16, max: 20 },
-              posicion_pies:  { score: 14, max: 20 },
-              ritmo_cadencia: { score: 9,  max: 10 },
-              potencia_pelota:{ score: 5,  max: 10 },
-            },
-            fortalezas: ['Excelente rotación de hombros', 'Preparación consistente', 'Buen timing'],
-            debilidades: ['Extensión limitada post-impacto', 'Posición de pies irregular en lateral'],
-            patron_error: 'Cortando trayectoria en el follow-through',
-            velocidad_pelota_max: 42.5,
-          },
-          backhand: {
-            score: 68, nivel: 'Intermedio-Avanzado',
-            scores: {
-              preparacion:    { score: 14, max: 20 },
-              punto_impacto:  { score: 13, max: 20 },
-              follow_through: { score: 14, max: 20 },
-              posicion_pies:  { score: 12, max: 20 },
-              ritmo_cadencia: { score: 8,  max: 10 },
-              potencia_pelota:{ score: 7,  max: 10 },
-            },
-            fortalezas: ['Rotación de hombros inversa adecuada', 'Codo izquierdo controlado'],
-            debilidades: ['Extensión completa en impacto', 'Estabilidad de pies'],
-            patron_error: 'Colapso del codo en seguimiento',
-            velocidad_pelota_max: 38.2,
-          },
-          saque: {
-            score: 73, nivel: 'Avanzado',
-            scores: {
-              preparacion_toss: { score: 15, max: 20 },
-              carga_trophy:     { score: 16, max: 20 },
-              punto_impacto:    { score: 15, max: 20 },
-              follow_through:   { score: 14, max: 20 },
-              ritmo_cadencia:   { score: 8,  max: 10 },
-              potencia_pelota:  { score: 5,  max: 10 },
-            },
-            fortalezas: ['Trophy position consistente', 'Buena coordinación toss-brazo'],
-            debilidades: ['Extensión vertical limitada', 'Pronación incompleta'],
-            patron_error: 'Alcance bajo en punto de impacto',
-            velocidad_pelota_max: 45.8,
-          },
-        },
-      },
-      historicalSessions: [
-        { date: '10 Mar', score_global: 60, forehand: 61, backhand: 57, saque: 61 },
-        { date: '15 Mar', score_global: 62, forehand: 64, backhand: 59, saque: 63 },
-        { date: '20 Mar', score_global: 65, forehand: 67, backhand: 62, saque: 66 },
-        { date: '25 Mar', score_global: 68, forehand: 70, backhand: 65, saque: 69 },
-        { date: '27 Mar', score_global: 72, forehand: 75, backhand: 68, saque: 73 },
-      ],
-      historicalDimensions: {
-        forehand: [
-          { date: '10 Mar', preparacion: 12, punto_impacto: 11, follow_through: 12, posicion_pies: 10, ritmo_cadencia: 7, potencia_pelota: 3 },
-          { date: '15 Mar', preparacion: 13, punto_impacto: 12, follow_through: 13, posicion_pies: 11, ritmo_cadencia: 7, potencia_pelota: 4 },
-          { date: '20 Mar', preparacion: 14, punto_impacto: 13, follow_through: 14, posicion_pies: 12, ritmo_cadencia: 8, potencia_pelota: 4 },
-          { date: '25 Mar', preparacion: 15, punto_impacto: 14, follow_through: 15, posicion_pies: 13, ritmo_cadencia: 8, potencia_pelota: 5 },
-          { date: '27 Mar', preparacion: 16, punto_impacto: 15, follow_through: 16, posicion_pies: 14, ritmo_cadencia: 9, potencia_pelota: 5 },
-        ],
-        backhand: [
-          { date: '10 Mar', preparacion: 10, punto_impacto: 9, follow_through: 10, posicion_pies: 8, ritmo_cadencia: 6, potencia_pelota: 4 },
-          { date: '15 Mar', preparacion: 11, punto_impacto: 10, follow_through: 11, posicion_pies: 9, ritmo_cadencia: 7, potencia_pelota: 5 },
-          { date: '20 Mar', preparacion: 12, punto_impacto: 11, follow_through: 12, posicion_pies: 10, ritmo_cadencia: 7, potencia_pelota: 5 },
-          { date: '25 Mar', preparacion: 13, punto_impacto: 12, follow_through: 13, posicion_pies: 11, ritmo_cadencia: 8, potencia_pelota: 6 },
-          { date: '27 Mar', preparacion: 14, punto_impacto: 13, follow_through: 14, posicion_pies: 12, ritmo_cadencia: 8, potencia_pelota: 7 },
-        ],
-        saque: [
-          { date: '10 Mar', preparacion_toss: 11, carga_trophy: 12, punto_impacto: 11, follow_through: 10, ritmo_cadencia: 6, potencia_pelota: 3 },
-          { date: '15 Mar', preparacion_toss: 12, carga_trophy: 13, punto_impacto: 12, follow_through: 11, ritmo_cadencia: 7, potencia_pelota: 4 },
-          { date: '20 Mar', preparacion_toss: 13, carga_trophy: 14, punto_impacto: 13, follow_through: 12, ritmo_cadencia: 7, potencia_pelota: 4 },
-          { date: '25 Mar', preparacion_toss: 14, carga_trophy: 15, punto_impacto: 14, follow_through: 13, ritmo_cadencia: 8, potencia_pelota: 5 },
-          { date: '27 Mar', preparacion_toss: 15, carga_trophy: 16, punto_impacto: 15, follow_through: 14, ritmo_cadencia: 8, potencia_pelota: 5 },
-        ],
-      },
-      reporteGeneral: {
-        seccion_diagnostico: {
-          titulo: 'Diagnóstico General',
-          contenido: 'Tu sesión de hoy refleja un nivel técnico sólido (72/100 - Avanzado) con progreso consistente. La rotación de hombros es excelente tanto en forehand como en saque. Sin embargo, el principal punto de mejora es la extensión completa en el punto de impacto, particularmente notable en backhand donde estás colapsando el codo izquierdo.',
-        },
-        seccion_forehand: {
-          titulo: 'Forehand', score: 75, nivel: 'Avanzado',
-          contenido: 'Tu forehand es tu arma más fuerte con un score de 75/100. La preparación es consistente, mostrando una excelente rotación de hombros. El timing del impacto es bueno. El follow-through es donde vemos la primera limitación: estás cortando ligeramente la trayectoria en lugar de mantener extensión completa hacia arriba.',
-          fortalezas_texto: 'Excelente rotación de hombros · Preparación consistente · Buen tempo',
-          debilidades_texto: 'Follow-through acortado · Posición pies en movimiento lateral',
-        },
-        seccion_backhand: {
-          titulo: 'Backhand', score: 68, nivel: 'Intermedio-Avanzado',
-          contenido: 'Tu backhand (68/100) es el área de mejora más clara. El problema biomecánico principal es el colapso del codo izquierdo en el punto de impacto. La preparación es adecuada con buena rotación de hombros inversa, pero la transición hacia el impacto pierde esa alineación.',
-          fortalezas_texto: 'Rotación de hombros inversa correcta · Buena preparación',
-          debilidades_texto: 'Colapso de codo en impacto (CRÍTICO) · Inestabilidad de pies',
-        },
-        seccion_saque: {
-          titulo: 'Saque', score: 73, nivel: 'Avanzado',
-          contenido: 'Tu saque (73/100) es técnicamente sólido con buena trophy position y excelente coordinación toss-brazo. El punto de impacto es donde vemos oportunidad: estás alcanzando extensión vertical de ~95° cuando el óptimo es 110-120°.',
-          fortalezas_texto: 'Trophy position consistente · Excelente coordinación toss · Buena consistencia',
-          debilidades_texto: 'Extensión vertical limitada · Pronación incompleta',
-        },
-        seccion_patrones: {
-          patrones: [
-            { patron: 'Falta de extensión completa', impacto: 'Reduce potencia 10-15%, limita precisión direccional' },
-            { patron: 'Inestabilidad de pies lateral', impacto: 'Reduce consistencia, riesgo moderado de lesión de rodilla' },
-            { patron: 'Colapso del codo izquierdo (backhand)', impacto: 'Pérdida de 15-20% potencia en backhand' },
-          ],
-        },
-        seccion_riesgo: {
-          riesgo_general: 'BAJO-MODERADO',
-          riesgos: [
-            { zona: 'Codo izquierdo', riesgo: 'MODERADO', razon: 'El colapso repetido crea estrés en ligamentos. Riesgo de tendinitis.', prevencion: 'Fortalecer rotadores externos. 2-3 sesiones semanales.' },
-            { zona: 'Rodillas', riesgo: 'BAJO-MODERADO', razon: 'Inestabilidad en lateral pone estrés adicional en rodillas.', prevencion: 'Trabajo de base con mini-swings. "Load and hold" antes de golpe.' },
-            { zona: 'Hombro derecho', riesgo: 'BAJO', razon: 'Extensión limitada y pronación incompleta generan desequilibrio.', prevencion: 'Completar extensión en saque, fortalecer pronadores.' },
-          ],
-        },
-        seccion_comparacion: {
-          titulo: 'Comparación vs Técnica ATP',
-          comparaciones: [
-            { elemento: 'Rotación de hombros', tuyo: '90%', analisis: 'Excelente. Estás casi al nivel profesional.' },
-            { elemento: 'Extensión completa', tuyo: '75%', analisis: 'Necesita mejora. Profesionales extienden 100%.' },
-            { elemento: 'Estabilidad de pies', tuyo: '70%', analisis: 'Hay trabajo por hacer. Base más firme en movimientos rápidos.' },
-            { elemento: 'Cadencia/Ritmo', tuyo: '85%', analisis: 'Muy bueno. Tienes buen tempo natural y consistente.' },
-            { elemento: 'Velocidad de pelota', tuyo: '65%', analisis: 'Esperado. Mejorará con extensión completa.' },
-          ],
-        },
-      },
-      planEjercicios: {
-        mensaje: '¡Excelente sesión! Enfócate esta semana en extensión y estabilidad.',
-        proximaFoco: 'Extensión completa y control de pies',
-        ejercicios: [
-          {
-            prioridad: 1, nombre: 'Extensión dinámica en pared', golpe: 'Backhand', dimension: 'Punto de impacto',
-            objetivo_biomecanico: 'Maximizar extensión del codo en impacto',
-            descripcion: 'De pie frente a pared, simula backhand con resistencia elástica. Enfatiza la extensión completa del brazo izquierdo. Pausa 1 segundo en "impacto".',
-            series: 3, repeticiones: '15 reps', duracion: 15,
-            atencion: 'Codo debe alcanzar línea de hombro. No doblar durante extensión.',
-            error_evitar: 'Cortar movimiento antes de extensión completa',
-            progresion_siguiente_sesion: 'Aumentar resistencia elástica en 20%',
-            metrica: 'Lograr 15 reps con extensión máxima en cada una',
-          },
-          {
-            prioridad: 2, nombre: 'Trabajo de base con mini-swings', golpe: 'Backhand', dimension: 'Posición de pies',
-            objetivo_biomecanico: 'Estabilidad dinámica durante movimiento lateral',
-            descripcion: 'Parado en T, realiza movimientos laterales pequeños (2-3 pasos) seguidos de mini-swings. Enfatiza transición rápida y estabilidad al impacto.',
-            series: 4, repeticiones: '10 x lado', duracion: 20,
-            atencion: 'Pies deben detenerse justo antes del impacto. No deslizar.',
-            error_evitar: 'Continuar movimiento de pies durante swing',
-            progresion_siguiente_sesion: 'Aumentar distancia de movimiento lateral',
-            metrica: 'Base firme en 90% de impactos simulados',
-          },
-          {
-            prioridad: 3, nombre: 'Pronación progresiva - Saque', golpe: 'Saque', dimension: 'Punto de impacto',
-            objetivo_biomecanico: 'Aumentar rotación y velocidad de pelota',
-            descripcion: 'Saque sin pelota enfatizando pronación máxima. Usa espejo lateral. Progresión: sin pelota → pelota lenta → pelota normal.',
-            series: 3, repeticiones: '20 sin pelota, 15 con pelota', duracion: 25,
-            atencion: 'Muñeca debe estar pronada al final. Codo alto.',
-            error_evitar: 'Golpe plano sin pronación',
-            progresion_siguiente_sesion: 'Introducir pelota a velocidad media',
-            metrica: 'Velocidad aumentada 3-5% en saques posteriores',
-          },
-          {
-            prioridad: 4, nombre: 'Cadencia y ritmo - Drills de pista', golpe: 'Forehand/Backhand', dimension: 'Ritmo/Cadencia',
-            objetivo_biomecanico: 'Mejorar consistencia y timing general',
-            descripcion: 'Serie de 10 golpes seguidos a ritmo constante. Mantén mismo tempo incluso si pierdes puntos. Cuenta en voz alta para establecer cadencia.',
-            series: 5, repeticiones: '10 golpes por serie', duracion: 30,
-            atencion: 'Ritmo debe ser idéntico en cada golpe.',
-            error_evitar: 'Acelerar cuando cometes errores',
-            progresion_siguiente_sesion: 'Aumentar velocidad de bolas',
-            metrica: 'Completar 8 de 10 golpes con tempo consistente',
-          },
-        ],
-      },
-    };
-    setMockData(exampleData);
-  }, []);
+useEffect(() => {
+  const loadData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-  if (!mockData) return (
-    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.textSec, fontFamily: "'DM Sans', sans-serif" }}>
-      Cargando sesión...
-    </div>
-  );
+      const { data: sessions, error } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      if (!sessions || sessions.length === 0) return;
+
+      const latest = sessions[0];
+      const scores = latest.scores_detalle || {};
+
+      const historicalSessions = sessions.slice(0, 5).reverse().map(s => ({
+        date: new Date(s.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
+        score_global: s.global_score,
+        forehand: s.scores_detalle?.forehand?.total ?? 0,
+        backhand: s.scores_detalle?.backhand?.total ?? 0,
+        saque:    s.scores_detalle?.saque?.total    ?? 0,
+      }));
+
+      setMockData({
+        currentSession: {
+          date:          new Date(latest.created_at).toLocaleDateString('es-ES'),
+          globalScore:   latest.global_score,
+          nivel:         latest.nivel_general,
+          sessionType:   latest.session_type,
+          duration:      '—',
+          cameraQuality: '—',
+          diagnostico:   latest.diagnostico_global,
+          golpes: {
+            forehand: {
+              score:               scores.forehand?.total ?? 0,
+              nivel:               scores.forehand?.nivel ?? '—',
+              scores:              scores.forehand?.scores ?? {},
+              fortalezas:          scores.forehand?.analisis_tecnico?.fortalezas ?? [],
+              debilidades:         scores.forehand?.analisis_tecnico?.debilidades ?? [],
+              patron_error:        scores.forehand?.analisis_tecnico?.patron_error_principal ?? '—',
+              velocidad_pelota_max:scores.forehand?.metricas_clave?.velocidad_pelota_max ?? 0,
+            },
+            backhand: {
+              score:               scores.backhand?.total ?? 0,
+              nivel:               scores.backhand?.nivel ?? '—',
+              scores:              scores.backhand?.scores ?? {},
+              fortalezas:          scores.backhand?.analisis_tecnico?.fortalezas ?? [],
+              debilidades:         scores.backhand?.analisis_tecnico?.debilidades ?? [],
+              patron_error:        scores.backhand?.analisis_tecnico?.patron_error_principal ?? '—',
+              velocidad_pelota_max:scores.backhand?.metricas_clave?.velocidad_pelota_max ?? 0,
+            },
+            saque: {
+              score:               scores.saque?.total ?? 0,
+              nivel:               scores.saque?.nivel ?? '—',
+              scores:              scores.saque?.scores ?? {},
+              fortalezas:          scores.saque?.analisis_tecnico?.fortalezas ?? [],
+              debilidades:         scores.saque?.analisis_tecnico?.debilidades ?? [],
+              patron_error:        scores.saque?.analisis_tecnico?.patron_error_principal ?? '—',
+              velocidad_pelota_max:scores.saque?.metricas_clave?.velocidad_pelota_max ?? 0,
+            },
+          },
+        },
+        historicalSessions,
+        historicalDimensions: { forehand: [], backhand: [], saque: [] },
+        reporteGeneral:  latest.scores_detalle ?? {},
+        planEjercicios:  latest.plan_ejercicios ?? { mensaje: '', proximaFoco: '', ejercicios: [] },
+      });
+    } catch (err) {
+      console.error('Error cargando sesiones:', err);
+    }
+  };
+
+  loadData();
+}, []);
+
+if (!mockData) return (
+  <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.textSec, fontFamily: "'DM Sans', sans-serif" }}>
+    Cargando sesión...
+  </div>
+);
+  
 
   const current = mockData.currentSession;
 
