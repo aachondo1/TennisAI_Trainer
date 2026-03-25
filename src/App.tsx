@@ -8,6 +8,7 @@ import  Dashboard  from './pages/Dashboard';
 import { Upload } from './pages/Upload';
 import { Report } from './pages/Report';
 import { History } from './pages/History';
+import { Profile } from './pages/Profile';
 
 function App() {
   return (
@@ -47,6 +48,14 @@ function App() {
               <ProtectedRoute>
                 <History />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                 <Profile />
+                </ProtectedRoute>
             }
           />
           <Route path="*" element={<Navigate to="/" />} />
