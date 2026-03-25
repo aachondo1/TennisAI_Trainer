@@ -1,25 +1,78 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase, Session } from '../lib/supabase';
-import { ArrowLeft, Filter, TrendingUp, Loader2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Filter, ArrowRight, Minus } from 'lucide-react';
+
+/* ─── DESIGN TOKENS ─────────────────────────────────────────── */
+const C = {
+  bg:       '#0a0c0e',
+  surface:  '#111316',
+  panel:    '#161a1e',
+  border:   '#1e2328',
+  borderHi: '#2a3038',
+  accent:   '#b5f542',
+  blue:     '#4a9eff',
+  red:      '#ff5a5a',
+  amber:    '#f5a623',
+  green:    '#3dd68c',
+  textPri:  '#f0f2f4',
+  textSec:  '#7a8694',
+  textMut:  '#404850',
+};
+
+const fonts = `
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+`;
+
+const scoreColor = (s: number) => {
+  if (s >= 80) return C.accent;
+  if (s >= 65) return C.blue;
+  if (s >= 50) return C.amber;
+  return C.red;
+};
+
+const SESSION_LABELS: Record<string, string> = {
+  forehand: 'Forehand',
+  backhand: 'Backhand',
+  saque:    'Saque',
+  mezcla:   'Mezcla',
+};
+
+const FILTER_OPTIONS = [
+  { value: 'all',      label: 'Todas'    },
+  { value: 'forehand', label: 'Forehand' },
+  { value: 'backhand', label: 'Backhand' },
+  { value: 'saque',    label: 'Saque'    },
+  { value: 'mezcla',   label: 'Mezcla'   },
+];
+
+const s = {
+  card: {
+    background: '#111316',
+    border: `1px solid #1e2328`,
+    borderRadius: 10,
+    padding: '20px 24px',
+  },
+  cardLabel: {
+    fontSize: 10, fontWeight: 600, color: '#404850',
+    textTransform: 'uppercase' as const, letterSpacing: '0.1em',
+    fontFamily: "'DM Mono', monospace", marginBottom: 4,
+  },
+};
 
 export function History() {
   const navigate = useNavigate();
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [filteredSessions, setFilteredSessions] = useState<Session[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState<string>('all');
+  const [sessions, setSessions]           = useState<Session[]>([]);
+  const [filtered, setFiltered]           = useState<Session[]>([]);
+  const [loading, setLoading]             = useState(true);
+  const [filterType, setFilterType]       = useState('all');
+
+  useEffect(() => { loadSessions(); }, []);
 
   useEffect(() => {
-    loadSessions();
-  }, []);
-
-  useEffect(() => {
-    if (filterType === 'all') {
-      setFilteredSessions(sessions);
-    } else {
-      setFilteredSessions(sessions.filter((s) => s.session_type === filterType));
-    }
+    setFiltered(filterType === 'all' ? sessions : sessions.filter(s => s.session_type === filterType));
   }, [filterType, sessions]);
 
   const loadSessions = async () => {
@@ -28,191 +81,223 @@ export function History() {
         .from('sessions')
         .select('*')
         .order('created_at', { ascending: false });
-
       if (error) throw error;
       setSessions(data || []);
-      setFilteredSessions(data || []);
-    } catch (error) {
-      console.error('Error loading sessions:', error);
+      setFiltered(data || []);
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
   };
 
-  const getSessionTypeLabel = (type: string) => {
-    const labels: Record<string, string> = {
-      forehand: 'Forehand',
-      backhand: 'Backhand',
-      saque: 'Saque',
-      mezcla: 'Mezcla',
-    };
-    return labels[type] || type;
+  const avgScore = filtered.length
+    ? Math.round(filtered.reduce((sum, s) => sum + s.global_score, 0) / filtered.length)
+    : 0;
+
+  const trend = () => {
+    if (filtered.length < 2) return 0;
+    const recent = filtered.slice(0, 3).reduce((s, x) => s + x.global_score, 0) / Math.min(3, filtered.length);
+    const older  = filtered.slice(3, 6);
+    if (!older.length) return 0;
+    const olderAvg = older.reduce((s, x) => s + x.global_score, 0) / older.length;
+    return Math.round(recent - olderAvg);
   };
 
-  const getLevelColor = (level: string) => {
-    const colors: Record<string, string> = {
-      principiante: 'bg-green-500',
-      intermedio: 'bg-blue-500',
-      avanzado: 'bg-orange-500',
-      experto: 'bg-red-500',
-    };
-    return colors[level] || 'bg-gray-500';
-  };
+  const t = trend();
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-500';
-    if (score >= 60) return 'text-blue-500';
-    if (score >= 40) return 'text-orange-500';
-    return 'text-red-500';
-  };
-
-  const calculateAverageScore = () => {
-    if (filteredSessions.length === 0) return 0;
-    const total = filteredSessions.reduce((sum, s) => sum + s.global_score, 0);
-    return Math.round(total / filteredSessions.length);
-  };
-
-  const getScoreTrend = () => {
-    if (filteredSessions.length < 2) return 0;
-    const recent = filteredSessions.slice(0, 3);
-    const older = filteredSessions.slice(3, 6);
-
-    if (older.length === 0) return 0;
-
-    const recentAvg = recent.reduce((sum, s) => sum + s.global_score, 0) / recent.length;
-    const olderAvg = older.reduce((sum, s) => sum + s.global_score, 0) / older.length;
-
-    return Math.round(recentAvg - olderAvg);
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-cyan-500 animate-spin" />
+  if (loading) return (
+    <>
+      <style>{fonts}</style>
+      <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Sans', sans-serif" }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ width: 36, height: 36, border: `3px solid ${C.border}`, borderTop: `3px solid ${C.accent}`, borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
+          <div style={{ color: C.textSec, fontSize: 13 }}>Cargando historial...</div>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
       </div>
-    );
-  }
+    </>
+  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
-      <div className="container mx-auto px-6 py-12">
-        <div className="max-w-6xl mx-auto">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Volver al Dashboard
-          </button>
+    <>
+      <style>{fonts}</style>
+      <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'DM Sans', sans-serif", color: C.textPri }}>
 
-          <h1 className="text-4xl font-bold text-white mb-8">Historial de Sesiones</h1>
+        {/* HEADER */}
+        <header style={{ borderBottom: `1px solid ${C.border}`, padding: '0 32px', background: C.bg, position: 'sticky', top: 0, zIndex: 50 }}>
+          <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 60 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 30, height: 30, borderRadius: 6, background: C.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a0c0e" strokeWidth="2.5" strokeLinecap="round">
+                  <circle cx="12" cy="12" r="10" /><path d="M12 2C6 8 6 16 12 22" /><path d="M12 2C18 8 18 16 12 22" /><line x1="2" y1="12" x2="22" y2="12" />
+                </svg>
+              </div>
+              <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: C.textPri }}>
+                Tennis<span style={{ color: C.accent }}>AI</span>
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => navigate('/dashboard')} style={{ padding: '7px 14px', background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, color: C.textSec, fontSize: 12, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
+                Dashboard
+              </button>
+              <button onClick={() => navigate('/upload')} style={{ padding: '7px 14px', background: C.accent, border: 'none', borderRadius: 6, color: '#0a0c0e', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: "'Syne', sans-serif" }}>
+                + Nuevo análisis
+              </button>
+            </div>
+          </div>
+        </header>
 
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-              <p className="text-gray-400 text-sm mb-2">Total de Sesiones</p>
-              <p className="text-3xl font-bold text-white">{filteredSessions.length}</p>
+        <main style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 32px' }}>
+
+          {/* TITLE */}
+          <div style={{ marginBottom: 32, animation: 'fadeIn 0.4s ease' }}>
+            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 26, fontWeight: 700, marginBottom: 4 }}>Historial de sesiones</div>
+            <div style={{ fontSize: 13, color: C.textSec }}>{sessions.length} sesiones registradas</div>
+          </div>
+
+          {/* STATS */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 28 }}>
+            <div style={s.card}>
+              <div style={s.cardLabel}>Sesiones totales</div>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 500, color: C.textPri }}>{filtered.length}</div>
             </div>
-            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-              <p className="text-gray-400 text-sm mb-2">Score Promedio</p>
-              <p className={`text-3xl font-bold ${getScoreColor(calculateAverageScore())}`}>
-                {calculateAverageScore()}
-              </p>
+            <div style={s.card}>
+              <div style={s.cardLabel}>Score promedio</div>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 500, color: scoreColor(avgScore) }}>{avgScore}</div>
             </div>
-            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-              <p className="text-gray-400 text-sm mb-2">Tendencia</p>
-              <div className="flex items-center gap-2">
-                <TrendingUp
-                  className={`w-6 h-6 ${
-                    getScoreTrend() >= 0 ? 'text-green-500' : 'text-red-500'
-                  } ${getScoreTrend() < 0 ? 'rotate-180' : ''}`}
-                />
-                <span
-                  className={`text-3xl font-bold ${
-                    getScoreTrend() >= 0 ? 'text-green-500' : 'text-red-500'
-                  }`}
-                >
-                  {Math.abs(getScoreTrend())}
-                </span>
+            <div style={s.card}>
+              <div style={s.cardLabel}>Tendencia</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 28, fontWeight: 500, color: t > 0 ? C.green : t < 0 ? C.red : C.textSec }}>
+                  {t > 0 ? '+' : ''}{t}
+                </div>
+                {t > 0 ? <TrendingUp size={20} color={C.green} /> : t < 0 ? <TrendingDown size={20} color={C.red} /> : <Minus size={20} color={C.textSec} />}
               </div>
             </div>
           </div>
 
-          <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 mb-8">
-            <div className="flex items-center gap-3 mb-4">
-              <Filter className="w-5 h-5 text-gray-400" />
-              <span className="text-white font-medium">Filtrar por tipo:</span>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {[
-                { value: 'all', label: 'Todas' },
-                { value: 'forehand', label: 'Forehand' },
-                { value: 'backhand', label: 'Backhand' },
-                { value: 'saque', label: 'Saque' },
-                { value: 'mezcla', label: 'Mezcla' },
-              ].map((filter) => (
-                <button
-                  key={filter.value}
-                  onClick={() => setFilterType(filter.value)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                    filterType === filter.value
-                      ? 'bg-cyan-600 text-white'
-                      : 'bg-gray-900 text-gray-400 hover:bg-gray-700'
-                  }`}
-                >
-                  {filter.label}
+          {/* FILTERS */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+            <Filter size={13} color={C.textMut} />
+            <div style={{ display: 'flex', gap: 6 }}>
+              {FILTER_OPTIONS.map(opt => (
+                <button key={opt.value} onClick={() => setFilterType(opt.value)} style={{
+                  padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                  fontFamily: "'DM Sans', sans-serif", transition: 'all 0.15s',
+                  border: `1px solid ${filterType === opt.value ? C.accent : C.border}`,
+                  background: filterType === opt.value ? C.accent + '15' : 'transparent',
+                  color: filterType === opt.value ? C.accent : C.textSec,
+                }}>
+                  {opt.label}
                 </button>
               ))}
             </div>
           </div>
 
-          {filteredSessions.length === 0 ? (
-            <div className="bg-gray-800 rounded-xl p-12 border border-gray-700 text-center">
-              <p className="text-gray-400 text-lg">
-                {filterType === 'all'
-                  ? 'Aún no tienes sesiones. ¡Sube tu primer video!'
-                  : 'No hay sesiones de este tipo.'}
-              </p>
+          {/* SESSION LIST */}
+          {filtered.length === 0 ? (
+            <div style={{ ...s.card, textAlign: 'center', padding: '48px 24px' }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>🎾</div>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 6 }}>
+                {filterType === 'all' ? 'Aún no tienes sesiones' : `No hay sesiones de tipo ${SESSION_LABELS[filterType]}`}
+              </div>
+              <div style={{ fontSize: 13, color: C.textSec, marginBottom: 20 }}>Sube un video para comenzar</div>
+              <button onClick={() => navigate('/upload')} style={{
+                padding: '10px 24px', background: C.accent, border: 'none', borderRadius: 8,
+                color: '#0a0c0e', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: "'Syne', sans-serif",
+              }}>
+                Subir video
+              </button>
             </div>
           ) : (
-            <div className="space-y-4">
-              {filteredSessions.map((session) => (
-                <Link
-                  key={session.id}
-                  to={`/report/${session.id}`}
-                  className="block bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-cyan-500 transition-all"
-                >
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="px-3 py-1 bg-cyan-500/10 text-cyan-400 text-sm font-medium rounded-full">
-                          {getSessionTypeLabel(session.session_type)}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {filtered.map((session, i) => {
+                const score = session.global_score;
+                const color = scoreColor(score);
+                const prevScore = filtered[i + 1]?.global_score;
+                const delta = prevScore !== undefined ? score - prevScore : null;
+
+                return (
+                  <div
+                    key={session.id}
+                    onClick={() => navigate(`/report/${session.id}`)}
+                    style={{
+                      ...s.card,
+                      display: 'flex', alignItems: 'center', gap: 20,
+                      cursor: 'pointer', transition: 'border-color 0.15s',
+                      animation: `fadeIn 0.3s ease ${i * 0.04}s both`,
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = C.borderHi)}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = C.border)}
+                  >
+                    {/* Score ring */}
+                    <div style={{ position: 'relative', width: 52, height: 52, flexShrink: 0 }}>
+                      <svg width="52" height="52" style={{ transform: 'rotate(-90deg)' }}>
+                        <circle cx="26" cy="26" r="22" fill="none" stroke={C.border} strokeWidth="3" />
+                        <circle cx="26" cy="26" r="22" fill="none"
+                          stroke={color} strokeWidth="3"
+                          strokeDasharray={`${(score / 100) * 138} 138`}
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 13, fontWeight: 500, color }}>{score}</span>
+                      </div>
+                    </div>
+
+                    {/* Info */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 600 }}>
+                          {SESSION_LABELS[session.session_type] || session.session_type}
                         </span>
-                        <span className={`px-3 py-1 ${getLevelColor(session.nivel_general)} text-white text-sm font-medium rounded-full capitalize`}>
+                        <span style={{
+                          fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 4,
+                          fontFamily: "'DM Mono', monospace", textTransform: 'uppercase', letterSpacing: '0.06em',
+                          background: color + '18', color, border: `1px solid ${color}30`,
+                        }}>
                           {session.nivel_general}
                         </span>
+                        {delta !== null && (
+                          <span style={{
+                            fontSize: 10, fontFamily: "'DM Mono', monospace", fontWeight: 500,
+                            padding: '2px 6px', borderRadius: 3,
+                            background: delta >= 0 ? C.green + '20' : C.red + '20',
+                            color: delta >= 0 ? C.green : C.red,
+                          }}>
+                            {delta >= 0 ? '+' : ''}{delta}
+                          </span>
+                        )}
                       </div>
-                      <p className="text-gray-400 text-sm mb-2">
-                        {new Date(session.created_at).toLocaleDateString('es-ES', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </p>
-                      <p className="text-gray-300 line-clamp-2">{session.diagnostico_global}</p>
+                      <div style={{ fontSize: 12, color: C.textSec, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {session.diagnostico_global || '—'}
+                      </div>
                     </div>
-                    <div className="text-center md:text-right">
-                      <p className={`text-4xl font-bold ${getScoreColor(session.global_score)}`}>
-                        {session.global_score}
-                      </p>
-                      <p className="text-gray-400 text-sm">Score Global</p>
+
+                    {/* Date + arrow */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 12, color: C.textSec }}>
+                          {new Date(session.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </div>
+                        <div style={{ fontSize: 11, color: C.textMut, fontFamily: "'DM Mono', monospace" }}>
+                          {new Date(session.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                      <ArrowRight size={14} color={C.textMut} />
                     </div>
                   </div>
-                </Link>
-              ))}
+                );
+              })}
             </div>
           )}
-        </div>
+        </main>
+
+        <footer style={{ borderTop: `1px solid ${C.border}`, padding: '20px 32px', textAlign: 'center', fontSize: 11, color: C.textMut, fontFamily: "'DM Mono', monospace" }}>
+          TennisAI © 2026 — Análisis biomecánico automático potenciado por IA
+        </footer>
       </div>
-    </div>
+    </>
   );
 }
