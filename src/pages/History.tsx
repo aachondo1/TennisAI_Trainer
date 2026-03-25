@@ -124,29 +124,7 @@ export function History() {
       <style>{fonts}</style>
       <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'DM Sans', sans-serif", color: C.textPri }}>
 
-        {/* HEADER */}
-        <header style={{ borderBottom: `1px solid ${C.border}`, padding: '0 32px', background: C.bg, position: 'sticky', top: 0, zIndex: 50 }}>
-          <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 60 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 30, height: 30, borderRadius: 6, background: C.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a0c0e" strokeWidth="2.5" strokeLinecap="round">
-                  <circle cx="12" cy="12" r="10" /><path d="M12 2C6 8 6 16 12 22" /><path d="M12 2C18 8 18 16 12 22" /><line x1="2" y1="12" x2="22" y2="12" />
-                </svg>
-              </div>
-              <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: C.textPri }}>
-                Tennis<span style={{ color: C.accent }}>AI</span>
-              </span>
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => navigate('/dashboard')} style={{ padding: '7px 14px', background: 'none', border: `1px solid ${C.border}`, borderRadius: 6, color: C.textSec, fontSize: 12, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>
-                Dashboard
-              </button>
-              <button onClick={() => navigate('/upload')} style={{ padding: '7px 14px', background: C.accent, border: 'none', borderRadius: 6, color: '#0a0c0e', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: "'Syne', sans-serif" }}>
-                + Nuevo análisis
-              </button>
-            </div>
-          </div>
-        </header>
+ 
 
         <main style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 32px' }}>
 
