@@ -122,19 +122,7 @@ export function Report() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white">
       {/* HEADER */}
-      <nav className="border-b border-gray-800">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-white transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span>Volver</span>
-            </button>
-          </div>
-        </div>
-      </nav>
+
 
       <div className="container mx-auto px-6 py-8">
         <div className="max-w-7xl mx-auto">
