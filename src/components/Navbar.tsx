@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut } from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
 
 const C = {
   bg:      '#0a0c0e',
@@ -17,8 +17,8 @@ const NAV_LINKS = [
 ];
 
 export function Navbar() {
-  const navigate  = useNavigate();
-  const location  = useLocation();
+  const navigate    = useNavigate();
+  const location    = useLocation();
   const { signOut } = useAuth();
 
   const handleSignOut = async () => {
@@ -53,7 +53,7 @@ export function Navbar() {
         {/* Nav links */}
         <nav style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           {NAV_LINKS.map(link => {
-            const active = location.pathname === link.path;
+            const active   = location.pathname === link.path;
             const isAction = link.label.startsWith('+');
             return (
               <button key={link.path} onClick={() => navigate(link.path)} style={{
@@ -72,20 +72,59 @@ export function Navbar() {
           })}
         </nav>
 
-        {/* Sign out */}
-        <button onClick={handleSignOut} style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          padding: '7px 12px', background: 'none',
-          border: `1px solid transparent`, borderRadius: 6,
-          color: C.textSec, fontSize: 12, cursor: 'pointer',
-          fontFamily: "'DM Sans', sans-serif", transition: 'all 0.15s',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = '#1e2328'; e.currentTarget.style.color = C.textPri; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.color = C.textSec; }}
-        >
-          <LogOut size={13} />
-          Salir
-        </button>
+        {/* Acciones derecha */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+
+          {/* Perfil */}
+          <button
+            onClick={() => navigate('/profile')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '7px 12px', background: 'none',
+              border: `1px solid ${location.pathname === '/profile' ? C.accent + '40' : 'transparent'}`,
+              borderRadius: 6,
+              color: location.pathname === '/profile' ? C.accent : C.textSec,
+              fontSize: 12, cursor: 'pointer',
+              fontFamily: "'DM Sans', sans-serif", transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => {
+              if (location.pathname !== '/profile') {
+                e.currentTarget.style.borderColor = C.border;
+                e.currentTarget.style.color = C.textPri;
+              }
+            }}
+            onMouseLeave={e => {
+              if (location.pathname !== '/profile') {
+                e.currentTarget.style.borderColor = 'transparent';
+                e.currentTarget.style.color = C.textSec;
+              }
+            }}
+          >
+            <User size={13} />
+            Perfil
+          </button>
+
+          {/* Separador */}
+          <div style={{ width: 1, height: 16, background: C.border, margin: '0 4px' }} />
+
+          {/* Salir */}
+          <button
+            onClick={handleSignOut}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '7px 12px', background: 'none',
+              border: '1px solid transparent', borderRadius: 6,
+              color: C.textSec, fontSize: 12, cursor: 'pointer',
+              fontFamily: "'DM Sans', sans-serif", transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textPri; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.color = C.textSec; }}
+          >
+            <LogOut size={13} />
+            Salir
+          </button>
+
+        </div>
       </div>
     </header>
   );
