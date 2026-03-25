@@ -113,18 +113,24 @@ export function Upload() {
 
       const { data: urlData } = supabase.storage.from('videos').getPublicUrl(fileName);
 
-      const response = await fetch(
-        'https://aachondo--tennis-pipeline-v2-analyze-video-endpoint.modal.run',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            video_url: urlData.publicUrl,
-            session_type: sessionType,
-            user_id: authUser.id,
-          }),
-        }
-      );
+      const controller = new AbortController();
+const timeoutId = setTimeout(() => controller.abort(), 600000);
+
+const response = await fetch(
+  'https://aachondo--tennis-pipeline-v2-analyze-video-endpoint.modal.run',
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      video_url: urlData.publicUrl,
+      session_type: sessionType,
+      user_id: authUser.id,
+    }),
+    signal: controller.signal,
+  }
+);
+
+clearTimeout(timeoutId);
 
       if (!response.ok) throw new Error('Error al procesar el video');
 
