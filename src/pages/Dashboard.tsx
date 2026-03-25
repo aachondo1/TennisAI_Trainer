@@ -758,31 +758,7 @@ export default function TennisReportDashboard() {
     <>
       <style>{fonts}</style>
       <div style={s.root}>
-        <header style={s.header}>
-          <div style={s.headerInner}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 30, height: 30, borderRadius: 6, background: C.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a0c0e" strokeWidth="2.5" strokeLinecap="round">
-                  <circle cx="12" cy="12" r="10" /><path d="M12 2C6 8 6 16 12 22" /><path d="M12 2C18 8 18 16 12 22" /><line x1="2" y1="12" x2="22" y2="12" />
-                </svg>
-              </div>
-              <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16, color: C.textPri, letterSpacing: '-0.02em' }}>
-                Tennis<span style={{ color: C.accent }}>AI</span>
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <span style={{ fontSize: 12, color: C.textSec }}>Sesión: {current.date}</span>
-              <span style={{ width: 1, height: 16, background: C.border, display: 'inline-block' }} />
-              <button onClick={() => navigate('/upload')} style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
-                background: C.accent, color: '#0a0c0e', border: 'none', borderRadius: 6,
-                fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: "'Syne', sans-serif",
-              }}>
-                <Upload size={12} />Nuevo análisis
-              </button>
-            </div>
-          </div>
-        </header>
+
 
         <nav style={s.nav}>
           <div style={s.navInner}>
