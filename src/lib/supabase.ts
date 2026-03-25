@@ -34,10 +34,21 @@ export type ScoresDetalle = {
   [key: string]: number | undefined;
 };
 
+export type Racket = {
+  id: string;
+  brand: string;
+  model: string;
+  head_size: string;
+  nickname: string;
+};
+
 export type Profile = {
   id: string;
   email: string;
-  full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  dominant_hand: 'right' | 'left' | null;
+  equipment_bag: Racket[];
   created_at: string;
   updated_at: string;
 };
