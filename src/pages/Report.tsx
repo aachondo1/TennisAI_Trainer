@@ -6,8 +6,7 @@ import {
 } from 'recharts';
 import {
   ChevronDown, TrendingUp, Eye, EyeOff, Info,
-  BarChart2, BookOpen, Dumbbell, Target, ArrowLeft, Loader2,
-  AlertTriangle, Zap, Activity, Award
+  BarChart2, BookOpen, Dumbbell, Target, ArrowLeft, Loader2
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useNavigate, useParams, Link } from 'react-router-dom';
