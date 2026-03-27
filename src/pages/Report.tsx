@@ -568,31 +568,28 @@ export function Report() {
     </div>
   );
 
- /* ── TAB REPORT ── */
+/* ── TAB REPORT ── */
   const TabReport = () => {
     const r = scores;
     const reporte = session.reporte_narrativo ?? session.reporte_narrativo_completo ?? null;
     const diagnosticoSeccion = r?.seccion_diagnostico;
 
-    // Parser minimalista: solo separa títulos y texto
+    // Parser exacto para Markdown (## Título)
     const renderFormattedReport = (text: string) => {
       if (!text) return null;
 
-      // Corta usando la estructura obligatoria de Claude (ej: "1. DIAGNÓSTICO GLOBAL")
-      const sections = text.split(/(?=\d\.\s+[A-ZÁÉÍÓÚÑ\s]+(?:$|\n|:))/);
+      // Cortar el texto por "## " e ignorar bloques vacíos
+      const sections = text.split('## ').filter(s => s.trim().length > 0);
 
       return sections.map((section, idx) => {
-        if (!section.trim()) return null;
+        const lines = section.trim().split('\n');
+        const title = lines[0].trim();
+        const content = lines.slice(1).join('\n').trim();
 
-        const match = section.match(/^(\d\.\s+[A-ZÁÉÍÓÚÑ\s]+(?:$|\n|:))([\s\S]*)/);
-        
-        // Si no hay match, renderiza como párrafo normal
-        if (!match) {
+        // Fallback de seguridad si no hay salto de línea
+        if (!content) {
           return <p key={idx} style={{ fontSize: 14, color: C.textSec, lineHeight: 1.8, whiteSpace: 'pre-wrap', marginBottom: 24 }}>{section.trim()}</p>;
         }
-
-        const title = match[1].trim().replace(/:$/, '');
-        const content = match[2].trim();
 
         return (
           <div key={idx} style={{ marginBottom: 32 }}>
@@ -603,7 +600,9 @@ export function Report() {
               color: C.textPri, 
               marginBottom: 12, 
               borderBottom: `1px solid ${C.border}`, 
-              paddingBottom: 8 
+              paddingBottom: 8,
+              textTransform: 'uppercase',
+              letterSpacing: '0.02em'
             }}>
               {title}
             </h4>
@@ -626,7 +625,7 @@ export function Report() {
         <div style={s.card}>
           <SectionLabel>Reporte de Alto Rendimiento</SectionLabel>
           {reporte ? (
-            <div style={{ marginTop: 16 }}>
+            <div style={{ marginTop: 20 }}>
               {renderFormattedReport(reporte)}
             </div>
           ) : (
