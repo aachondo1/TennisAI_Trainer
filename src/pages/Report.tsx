@@ -567,7 +567,7 @@ export function Report() {
     </div>
   );
 
-/* ── TAB REPORT ── */
+  /* ── TAB REPORT ── */
   const TabReport = () => {
     const r = scores;
     const reporte = session.reporte_narrativo ?? session.reporte_narrativo_completo ?? null;
@@ -577,7 +577,6 @@ export function Report() {
     const renderFormattedReport = (text: string) => {
       if (!text) return null;
 
-      // Cortar el texto por "## " e ignorar bloques vacíos
       const sections = text.split('## ').filter(s => s.trim().length > 0);
 
       return sections.map((section, idx) => {
@@ -585,7 +584,6 @@ export function Report() {
         const title = lines[0].trim();
         const content = lines.slice(1).join('\n').trim();
 
-        // Fallback de seguridad si no hay salto de línea
         if (!content) {
           return <p key={idx} style={{ fontSize: 14, color: C.textSec, lineHeight: 1.8, whiteSpace: 'pre-wrap', marginBottom: 24 }}>{section.trim()}</p>;
         }
@@ -636,7 +634,101 @@ export function Report() {
       </div>
     );
   };
-  
+
+  /* ── TAB EXERCISES ── */
+  const TabExercises = () => {
+    const p = planEjercicios;
+    
+    // Mapeo exacto de las llaves que genera agent_coach en Python
+    const ejercicios = Array.isArray(p?.ejercicios_prioritarios) ? p.ejercicios_prioritarios : [];
+    const mensaje = p?.mensaje_motivacional;
+    const foco = p?.proxima_sesion_foco;
+
+    const days = [
+      { day: 'Lunes',     focus: 'Técnica — ejercicios prioritarios 1 y 2', dur: '60 min'  },
+      { day: 'Martes',    focus: 'Partido — aplicar correcciones en juego',  dur: '75 min'  },
+      { day: 'Miércoles', focus: 'Descanso o ejercicio ligero',               dur: '20 min'  },
+      { day: 'Jueves',    focus: 'Técnica — ejercicios 3 y 4',               dur: '60 min'  },
+      { day: 'Viernes',   focus: 'Partido competitivo — test de mejoras',    dur: '90 min'  },
+      { day: 'Sábado',    focus: 'Volumen — drills extensos',                 dur: '120 min' },
+      { day: 'Domingo',   focus: 'Descanso y recuperación',                   dur: 'Ligero'  },
+    ];
+
+    return (
+      <div>
+        {(mensaje || foco) && (
+          <div style={{ ...s.card, marginBottom: 24, borderLeft: `3px solid ${C.accentDark}`, borderRadius: 10 }}>
+            {mensaje && <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{mensaje}</div>}
+            {foco && <div style={{ fontSize: 13, color: C.textSec }}>Foco: <span style={{ color: C.accentDark }}>{foco}</span></div>}
+          </div>
+        )}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {ejercicios.length === 0 ? (
+              <div style={{ ...s.card, color: C.textMut, fontSize: 13 }}>No hay ejercicios disponibles para esta sesión.</div>
+            ) : ejercicios.map((ej: any, idx: number) => {
+              const key = ej.prioridad ?? idx;
+              return (
+                <div key={key} style={{ ...s.card, padding: 0, overflow: 'hidden' }}>
+                  <button
+                    onClick={() => setExpandedExercise(expandedExercise === key ? null : key)}
+                    style={{ width: '100%', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                  >
+                    <div style={{ width: 32, height: 32, borderRadius: 6, background: C.accent + '30', color: '#0f1923', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Mono', monospace", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
+                      {ej.prioridad ?? idx + 1}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: C.textPri, marginBottom: 4 }}>{ej.nombre}</div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        {ej.golpe_objetivo && <Tag color={C.blue}>{ej.golpe_objetivo}</Tag>}
+                        {ej.dimension_objetivo && <Tag color={C.textSec}>{ej.dimension_objetivo}</Tag>}
+                      </div>
+                    </div>
+                    <ChevronDown size={16} style={{ color: C.textSec, transform: expandedExercise === key ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
+                  </button>
+                  {expandedExercise === key && (
+                    <div style={{ padding: '0 20px 20px', borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
+                      {ej.descripcion_detallada && <div style={{ fontSize: 13, color: C.textSec, lineHeight: 1.7, marginBottom: 14 }}>{ej.descripcion_detallada}</div>}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
+                        {([
+                          ['Series',   ej.series      ? `${ej.series}x`       : '—'],
+                          ['Reps',     ej.repeticiones ?? '—'],
+                          ['Duración', ej.duracion_minutos ? `${ej.duracion_minutos} min`  : '—'],
+                        ] as [string, string][]).map(([label, val]) => (
+                          <div key={label} style={{ background: C.panel, borderRadius: 6, padding: '10px 12px', border: `1px solid ${C.border}` }}>
+                            <div style={{ fontSize: 10, color: C.textMut, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 2, fontFamily: "'DM Mono', monospace" }}>{label}</div>
+                            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 15, fontWeight: 500, color: C.textPri }}>{val}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {ej.punto_atencion_clave && <div style={{ padding: '10px 12px', background: C.green   + '12', borderLeft: `2px solid ${C.green}`,      borderRadius: '0 6px 6px 0', fontSize: 12 }}><span style={{ color: C.green,      fontWeight: 600 }}>Atención clave — </span><span style={{ color: C.textSec }}>{ej.punto_atencion_clave}</span></div>}
+                        {ej.error_comun_evitar && <div style={{ padding: '10px 12px', background: C.red    + '10', borderLeft: `2px solid ${C.red}`,        borderRadius: '0 6px 6px 0', fontSize: 12 }}><span style={{ color: C.red,        fontWeight: 600 }}>Error a evitar — </span><span style={{ color: C.textSec }}>{ej.error_comun_evitar}</span></div>}
+                        {ej.metrica_exito && <div style={{ padding: '10px 12px', background: C.accentDark + '10', borderLeft: `2px solid ${C.accentDark}`, borderRadius: '0 6px 6px 0', fontSize: 12 }}><span style={{ color: C.accentDark, fontWeight: 600 }}>Métrica de éxito — </span><span style={{ color: C.textSec }}>{ej.metrica_exito}</span></div>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <div style={s.card}>
+            <SectionLabel>Plan semanal</SectionLabel>
+            {days.map((d, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: i < days.length - 1 ? `1px solid ${C.border}` : 'none' }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 2 }}>{d.day}</div>
+                  <div style={{ fontSize: 11, color: C.textSec }}>{d.focus}</div>
+                </div>
+                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: C.accentDark, flexShrink: 0, marginLeft: 12 }}>{d.dur}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   /* ── RENDER ── */
   return (
     <>
