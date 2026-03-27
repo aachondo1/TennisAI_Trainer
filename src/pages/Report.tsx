@@ -568,17 +568,17 @@ export function Report() {
     </div>
   );
 
-  /* ── TAB REPORT ── */
+ /* ── TAB REPORT ── */
   const TabReport = () => {
     const r = scores;
     const reporte = session.reporte_narrativo ?? session.reporte_narrativo_completo ?? null;
     const diagnosticoSeccion = r?.seccion_diagnostico;
 
-    // Parser inteligente para el reporte estructurado de Claude
+    // Parser minimalista: solo separa títulos y texto
     const renderFormattedReport = (text: string) => {
       if (!text) return null;
 
-      // Corta el texto cada vez que encuentra "Número. TEXTO EN MAYÚSCULAS"
+      // Corta usando la estructura obligatoria de Claude (ej: "1. DIAGNÓSTICO GLOBAL")
       const sections = text.split(/(?=\d\.\s+[A-ZÁÉÍÓÚÑ\s]+(?:$|\n|:))/);
 
       return sections.map((section, idx) => {
@@ -586,38 +586,34 @@ export function Report() {
 
         const match = section.match(/^(\d\.\s+[A-ZÁÉÍÓÚÑ\s]+(?:$|\n|:))([\s\S]*)/);
         
-        // Fallback si la sección no hace match con el patrón
+        // Si no hay match, renderiza como párrafo normal
         if (!match) {
-          return <p key={idx} style={{ fontSize: 13, color: C.textSec, lineHeight: 1.9, whiteSpace: 'pre-wrap', marginBottom: 24 }}>{section.trim()}</p>;
+          return <p key={idx} style={{ fontSize: 14, color: C.textSec, lineHeight: 1.8, whiteSpace: 'pre-wrap', marginBottom: 24 }}>{section.trim()}</p>;
         }
 
         const title = match[1].trim().replace(/:$/, '');
         const content = match[2].trim();
 
-        // Asignación de Color e Icono Semántico según el título
-        let sectionColor = C.textPri;
-        let SectionIcon = Target;
-
-        if (title.includes('DIAGNÓSTICO')) { sectionColor = C.accentDark; SectionIcon = Activity; }
-        else if (title.includes('FOREHAND')) { sectionColor = C.blue; SectionIcon = Zap; }
-        else if (title.includes('BACKHAND')) { sectionColor = C.red; SectionIcon = Zap; }
-        else if (title.includes('SAQUE')) { sectionColor = C.green; SectionIcon = Zap; }
-        else if (title.includes('ERROR') || title.includes('RIESGO')) { sectionColor = C.amber; SectionIcon = AlertTriangle; }
-        else if (title.includes('ATP')) { sectionColor = C.blue; SectionIcon = Award; }
-        else if (title.includes('RECOMENDACIONES')) { sectionColor = C.accentDark; SectionIcon = Target; }
-
         return (
-          <div key={idx} style={{ ...s.card, marginBottom: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, borderBottom: `1px solid ${C.border}`, paddingBottom: 12 }}>
-              <div style={{ background: sectionColor + '15', padding: 6, borderRadius: 6, display: 'flex' }}>
-                <SectionIcon size={16} color={sectionColor} />
-              </div>
-              <h4 style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 700, color: sectionColor, margin: 0, letterSpacing: '0.02em' }}>
-                {title}
-              </h4>
-            </div>
-            
-            <p style={{ fontSize: 14, color: C.textSec, lineHeight: 1.8, margin: 0, whiteSpace: 'pre-wrap' }}>
+          <div key={idx} style={{ marginBottom: 32 }}>
+            <h4 style={{ 
+              fontFamily: "'Syne', sans-serif", 
+              fontSize: 16, 
+              fontWeight: 700, 
+              color: C.textPri, 
+              marginBottom: 12, 
+              borderBottom: `1px solid ${C.border}`, 
+              paddingBottom: 8 
+            }}>
+              {title}
+            </h4>
+            <p style={{ 
+              fontSize: 14, 
+              color: C.textSec, 
+              lineHeight: 1.8, 
+              margin: 0, 
+              whiteSpace: 'pre-wrap' 
+            }}>
               {content}
             </p>
           </div>
@@ -627,139 +623,22 @@ export function Report() {
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {/* Resumen de Scores por Golpe */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 8 }}>
-          {(['forehand', 'backhand', 'saque'] as const).map((gk, i) => {
-            const color = [C.blue, C.red, C.green][i];
-            const g = current.golpes[gk];
-            return (
-              <div key={gk} style={{...s.card, borderTop: `4px solid ${color}`}}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, textTransform: 'capitalize' }}>{gk}</div>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 20, fontWeight: 500, color }}>{g.score}</div>
-                </div>
-                {g.fortalezas?.length > 0 && (
-                  <div style={{ fontSize: 11, color: C.green, marginBottom: 8 }}>
-                    {g.fortalezas.map((f: string, j: number) => <div key={j} style={{ marginBottom: 3 }}>+ {f}</div>)}
-                  </div>
-                )}
-                {g.debilidades?.length > 0 && (
-                  <div style={{ fontSize: 11, color: C.amber }}>
-                    {g.debilidades.map((d: string, j: number) => <div key={j} style={{ marginBottom: 3 }}>— {d}</div>)}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Reporte Narrativo Parseado */}
-        {reporte ? (
-          <div>
-            <SectionLabel>Análisis de Alto Rendimiento</SectionLabel>
-            {renderFormattedReport(reporte)}
-          </div>
-        ) : (
-          <div style={s.card}>
-            <SectionLabel>Diagnóstico general</SectionLabel>
+        <div style={s.card}>
+          <SectionLabel>Reporte de Alto Rendimiento</SectionLabel>
+          {reporte ? (
+            <div style={{ marginTop: 16 }}>
+              {renderFormattedReport(reporte)}
+            </div>
+          ) : (
             <p style={{ fontSize: 14, color: C.textSec, lineHeight: 1.8 }}>
               {diagnosticoSeccion?.contenido ?? current.diagnostico}
             </p>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  /* ── TAB EXERCISES ── */
-  const TabExercises = () => {
-    const p = planEjercicios;
-    const ejercicios = Array.isArray(p?.ejercicios) ? p.ejercicios : [];
-    const days = [
-      { day: 'Lunes',     focus: 'Técnica — ejercicios prioritarios 1 y 2', dur: '60 min'  },
-      { day: 'Martes',    focus: 'Partido — aplicar correcciones en juego',  dur: '75 min'  },
-      { day: 'Miércoles', focus: 'Descanso o ejercicio ligero',               dur: '20 min'  },
-      { day: 'Jueves',    focus: 'Técnica — ejercicios 3 y 4',               dur: '60 min'  },
-      { day: 'Viernes',   focus: 'Partido competitivo — test de mejoras',    dur: '90 min'  },
-      { day: 'Sábado',    focus: 'Volumen — drills extensos',                 dur: '120 min' },
-      { day: 'Domingo',   focus: 'Descanso y recuperación',                   dur: 'Ligero'  },
-    ];
-
-    return (
-      <div>
-        {(p?.mensaje || p?.proximaFoco) && (
-          <div style={{ ...s.card, marginBottom: 24, borderLeft: `3px solid ${C.accentDark}`, borderRadius: 10 }}>
-            {p.mensaje     && <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{p.mensaje}</div>}
-            {p.proximaFoco && <div style={{ fontSize: 13, color: C.textSec }}>Foco: <span style={{ color: C.accentDark }}>{p.proximaFoco}</span></div>}
-          </div>
-        )}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {ejercicios.length === 0 ? (
-              <div style={{ ...s.card, color: C.textMut, fontSize: 13 }}>No hay ejercicios disponibles para esta sesión.</div>
-            ) : ejercicios.map((ej: any, idx: number) => {
-              const key = ej.prioridad ?? idx;
-              return (
-                <div key={key} style={{ ...s.card, padding: 0, overflow: 'hidden' }}>
-                  <button
-                    onClick={() => setExpandedExercise(expandedExercise === key ? null : key)}
-                    style={{ width: '100%', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                  >
-                    <div style={{ width: 32, height: 32, borderRadius: 6, background: C.accent + '30', color: '#0f1923', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Mono', monospace", fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
-                      {ej.prioridad ?? idx + 1}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 500, color: C.textPri, marginBottom: 4 }}>{ej.nombre}</div>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        {ej.golpe     && <Tag color={C.blue}>{ej.golpe}</Tag>}
-                        {ej.dimension && <Tag color={C.textSec}>{ej.dimension}</Tag>}
-                      </div>
-                    </div>
-                    <ChevronDown size={16} style={{ color: C.textSec, transform: expandedExercise === key ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
-                  </button>
-                  {expandedExercise === key && (
-                    <div style={{ padding: '0 20px 20px', borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
-                      {ej.descripcion && <div style={{ fontSize: 13, color: C.textSec, lineHeight: 1.7, marginBottom: 14 }}>{ej.descripcion}</div>}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
-                        {([
-                          ['Series',   ej.series      ? `${ej.series}x`       : '—'],
-                          ['Reps',     ej.repeticiones ?? '—'],
-                          ['Duración', ej.duracion     ? `${ej.duracion} min`  : '—'],
-                        ] as [string, string][]).map(([label, val]) => (
-                          <div key={label} style={{ background: C.panel, borderRadius: 6, padding: '10px 12px', border: `1px solid ${C.border}` }}>
-                            <div style={{ fontSize: 10, color: C.textMut, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 2, fontFamily: "'DM Mono', monospace" }}>{label}</div>
-                            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 15, fontWeight: 500, color: C.textPri }}>{val}</div>
-                          </div>
-                        ))}
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {ej.atencion    && <div style={{ padding: '10px 12px', background: C.green   + '12', borderLeft: `2px solid ${C.green}`,      borderRadius: '0 6px 6px 0', fontSize: 12 }}><span style={{ color: C.green,      fontWeight: 600 }}>Atención clave — </span><span style={{ color: C.textSec }}>{ej.atencion}</span></div>}
-                        {ej.error_evitar && <div style={{ padding: '10px 12px', background: C.red    + '10', borderLeft: `2px solid ${C.red}`,        borderRadius: '0 6px 6px 0', fontSize: 12 }}><span style={{ color: C.red,        fontWeight: 600 }}>Error a evitar — </span><span style={{ color: C.textSec }}>{ej.error_evitar}</span></div>}
-                        {ej.metrica     && <div style={{ padding: '10px 12px', background: C.accentDark + '10', borderLeft: `2px solid ${C.accentDark}`, borderRadius: '0 6px 6px 0', fontSize: 12 }}><span style={{ color: C.accentDark, fontWeight: 600 }}>Métrica de éxito — </span><span style={{ color: C.textSec }}>{ej.metrica}</span></div>}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          <div style={s.card}>
-            <SectionLabel>Plan semanal</SectionLabel>
-            {days.map((d, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: i < days.length - 1 ? `1px solid ${C.border}` : 'none' }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 2 }}>{d.day}</div>
-                  <div style={{ fontSize: 11, color: C.textSec }}>{d.focus}</div>
-                </div>
-                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: C.accentDark, flexShrink: 0, marginLeft: 12 }}>{d.dur}</div>
-              </div>
-            ))}
-          </div>
+          )}
         </div>
       </div>
     );
   };
-
+  
   /* ── RENDER ── */
   return (
     <>
