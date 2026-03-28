@@ -12,7 +12,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export type Session = {
   id: string;
   user_id: string;
-  session_type: 'forehand' | 'backhand' | 'saque' | 'mezcla';
+  session_type: 'clase' | 'paleteo' | 'partido';
   global_score: number;
   nivel_general: 'principiante' | 'intermedio' | 'avanzado' | 'experto';
   diagnostico_global: string;
