@@ -20,7 +20,7 @@ const fonts = `
 `;
 
 /* ─── TIPOS ───────────────────────────────────────────────────── */
-type SessionType = 'forehand' | 'backhand' | 'saque' | 'mezcla';
+type SessionType = 'clase' | 'paleteo' | 'partido';
 
 type Racket = {
   id: string;
