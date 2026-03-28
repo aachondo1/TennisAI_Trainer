@@ -311,53 +311,62 @@ export function Upload() {
           </div>
 
           {/* STEP 0 — Tipo de sesión */}
-          {step === 0 && (
-           
-<div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10, marginBottom: 32 }}>
-  {SESSION_TYPES.map(({ value, label, icon, desc }) => (
-    <button
-      key={value}
-      onClick={() => setSessionType(value)}
-      style={{
-        padding: '16px 20px',
-        borderRadius: 10,
-        textAlign: 'left',
-        cursor: 'pointer',
-        background: sessionType === value ? C.accent + '10' : C.surface,
-        border: `1.5px solid ${sessionType === value ? C.accent : C.border}`,
-        transition: 'all 0.15s',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 16,
-      }}
-    >
-      <span style={{ fontSize: 24, flexShrink: 0 }}>{icon}</span>
-      <div style={{ flex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-          <span style={{
-            fontFamily: "'Syne', sans-serif",
-            fontSize: 15,
-            fontWeight: 600,
-            color: sessionType === value ? C.accentDark : C.textPri,
-          }}>
-            {label}
-          </span>
-          {sessionType === value && (
-            <div style={{
-              width: 18, height: 18, borderRadius: '50%',
-              background: C.accentDark,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <Check size={10} color="#fff" />
+      {step === 0 && (
+  <div style={{ animation: 'fadeIn 0.3s ease' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10, marginBottom: 32 }}>
+      {SESSION_TYPES.map(({ value, label, icon, desc }) => (
+        <button
+          key={value}
+          onClick={() => setSessionType(value)}
+          style={{
+            padding: '16px 20px',
+            borderRadius: 10,
+            textAlign: 'left',
+            cursor: 'pointer',
+            background: sessionType === value ? C.accent + '10' : C.surface,
+            border: `1.5px solid ${sessionType === value ? C.accent : C.border}`,
+            transition: 'all 0.15s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 16,
+          }}
+        >
+          <span style={{ fontSize: 24, flexShrink: 0 }}>{icon}</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span style={{
+                fontFamily: "'Syne', sans-serif",
+                fontSize: 15,
+                fontWeight: 600,
+                color: sessionType === value ? C.accentDark : C.textPri,
+              }}>
+                {label}
+              </span>
+              {sessionType === value && (
+                <div style={{
+                  width: 18, height: 18, borderRadius: '50%',
+                  background: C.accentDark,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <Check size={10} color="#fff" />
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        <div style={{ fontSize: 12, color: C.textSec, lineHeight: 1.5 }}>{desc}</div>
-      </div>
+            <div style={{ fontSize: 12, color: C.textSec, lineHeight: 1.5 }}>{desc}</div>
+          </div>
+        </button>
+      ))}
+    </div>
+    <button onClick={() => setStep(1)} style={{
+      width: '100%', padding: '14px', background: C.accent, color: '#0f1923',
+      border: 'none', borderRadius: 8, fontFamily: "'Syne', sans-serif",
+      fontSize: 14, fontWeight: 700, cursor: 'pointer',
+    }}>
+      Continuar →
     </button>
-  ))}
-</div>
+  </div>
+)}
               <button onClick={() => setStep(1)} style={{ width: '100%', padding: '14px', background: C.accent, color: '#0f1923', border: 'none', borderRadius: 8, fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Continuar →</button>
             </div>
           )}
