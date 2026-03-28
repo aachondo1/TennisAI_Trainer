@@ -367,9 +367,7 @@ export function Upload() {
     </button>
   </div>
 )}
-              <button onClick={() => setStep(1)} style={{ width: '100%', padding: '14px', background: C.accent, color: '#0f1923', border: 'none', borderRadius: 8, fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Continuar →</button>
-            </div>
-          )}
+
 
           {/* STEP 1 — Equipamiento */}
           {step === 1 && (
