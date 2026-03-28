@@ -106,9 +106,9 @@ function ActiveJobBanner({
   }, [job.vision_job_id]);
 
   // Session type label
-  const typeLabels: Record<string, string> = {
-    forehand: 'Forehand', backhand: 'Backhand', saque: 'Saque', mezcla: 'Mezcla',
-  };
+const typeLabels: Record<string, string> = {
+  clase: 'Clase', paleteo: 'Paleteo', partido: 'Partido',
+};
   const typeLabel = typeLabels[job.session_type] || job.session_type;
 
   // Elapsed time
