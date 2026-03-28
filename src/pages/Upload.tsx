@@ -143,7 +143,7 @@ export function Upload() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState(0);
-  const [sessionType, setSessionType] = useState<SessionType>('mezcla');
+  const [sessionType, setSessionType] = useState<SessionType>('paleteo');
   const [rackets, setRackets]               = useState<Racket[]>([]);
   const [racketLoading, setRacketLoading]   = useState(true);
   const [selectedRacket, setSelectedRacket] = useState<Racket | null>(null);
@@ -312,19 +312,52 @@ export function Upload() {
 
           {/* STEP 0 — Tipo de sesión */}
           {step === 0 && (
-            <div style={{ animation: 'fadeIn 0.3s ease' }}>
-              <FieldLabel>Paso 1 — Selecciona el tipo de sesión</FieldLabel>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 32 }}>
-                {SESSION_TYPES.map(({ value, label, desc }) => (
-                  <button key={value} onClick={() => setSessionType(value)} style={{ padding: '18px 20px', borderRadius: 10, textAlign: 'left', cursor: 'pointer', background: sessionType === value ? C.accent + '10' : C.surface, border: `1.5px solid ${sessionType === value ? C.accent : C.border}`, transition: 'all 0.15s' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 15, fontWeight: 600, color: sessionType === value ? C.accentDark : C.textPri }}>{label}</span>
-                      {sessionType === value && <div style={{ width: 18, height: 18, borderRadius: '50%', background: C.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Check size={10} color="#0f1923" /></div>}
-                    </div>
-                    <div style={{ fontSize: 12, color: C.textSec }}>{desc}</div>
-                  </button>
-                ))}
-              </div>
+           {/* grid de opciones */}
+<div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10, marginBottom: 32 }}>
+  {SESSION_TYPES.map(({ value, label, icon, desc }) => (
+    <button
+      key={value}
+      onClick={() => setSessionType(value)}
+      style={{
+        padding: '16px 20px',
+        borderRadius: 10,
+        textAlign: 'left',
+        cursor: 'pointer',
+        background: sessionType === value ? C.accent + '10' : C.surface,
+        border: `1.5px solid ${sessionType === value ? C.accent : C.border}`,
+        transition: 'all 0.15s',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+      }}
+    >
+      <span style={{ fontSize: 24, flexShrink: 0 }}>{icon}</span>
+      <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <span style={{
+            fontFamily: "'Syne', sans-serif",
+            fontSize: 15,
+            fontWeight: 600,
+            color: sessionType === value ? C.accentDark : C.textPri,
+          }}>
+            {label}
+          </span>
+          {sessionType === value && (
+            <div style={{
+              width: 18, height: 18, borderRadius: '50%',
+              background: C.accentDark,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <Check size={10} color="#fff" />
+            </div>
+          )}
+        </div>
+        <div style={{ fontSize: 12, color: C.textSec, lineHeight: 1.5 }}>{desc}</div>
+      </div>
+    </button>
+  ))}
+</div>
               <button onClick={() => setStep(1)} style={{ width: '100%', padding: '14px', background: C.accent, color: '#0f1923', border: 'none', borderRadius: 8, fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Continuar →</button>
             </div>
           )}
