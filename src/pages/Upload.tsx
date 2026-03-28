@@ -34,11 +34,25 @@ type Racket = {
 const VISION_ENDPOINT = 'https://aachondo--tennis-vision-pipeline-vision-endpoint.modal.run';
 
 /* ─── CONSTANTES ──────────────────────────────────────────────── */
-const SESSION_TYPES: { value: SessionType; label: string; desc: string }[] = [
-  { value: 'forehand', label: 'Forehand', desc: 'Análisis de tu golpe de derecha' },
-  { value: 'backhand', label: 'Backhand', desc: 'Análisis de tu golpe de revés' },
-  { value: 'saque',    label: 'Saque',    desc: 'Análisis de tu servicio' },
-  { value: 'mezcla',   label: 'Mezcla',   desc: 'Análisis completo de tu juego' },
+const SESSION_TYPES: { value: SessionType; label: string; icon: string; desc: string }[] = [
+  {
+    value: 'clase',
+    label: 'Clase',
+    icon: '🎓',
+    desc: 'Con instructor — se espera mayor corrección técnica y posiciones controladas',
+  },
+  {
+    value: 'paleteo',
+    label: 'Paleteo',
+    icon: '🎾',
+    desc: 'Peloteo libre — técnica en condiciones reales pero sin presión de juego',
+  },
+  {
+    value: 'partido',
+    label: 'Partido',
+    icon: '🏆',
+    desc: 'Situación competitiva — mayor exigencia física, táctica y presión mental',
+  },
 ];
 
 const CAMERA_ORIGINS = [
