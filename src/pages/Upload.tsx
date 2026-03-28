@@ -312,7 +312,7 @@ export function Upload() {
 
           {/* STEP 0 — Tipo de sesión */}
           {step === 0 && (
-           {/* grid de opciones */}
+           
 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10, marginBottom: 32 }}>
   {SESSION_TYPES.map(({ value, label, icon, desc }) => (
     <button
