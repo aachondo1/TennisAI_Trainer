@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { AdminRoute } from './components/AdminRoute';
+import { ProfesorRoute } from './components/ProfesorRoute';
 import { Landing } from './pages/Landing';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
@@ -9,6 +11,9 @@ import { Upload } from './pages/Upload';
 import { Report } from './pages/Report';
 import { History } from './pages/History';
 import { Profile } from './pages/Profile';
+import { Admin } from './pages/Admin';
+import { Profesor } from './pages/Profesor';
+import { ProfesorAlumno } from './pages/ProfesorAlumno';
 
 function App() {
   return (
@@ -58,6 +63,9 @@ function App() {
                 </ProtectedRoute>
             }
           />
+          <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+          <Route path="/profesor" element={<ProfesorRoute><Profesor /></ProfesorRoute>} />
+          <Route path="/profesor/alumno/:id" element={<ProfesorRoute><ProfesorAlumno /></ProfesorRoute>} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </AuthProvider>

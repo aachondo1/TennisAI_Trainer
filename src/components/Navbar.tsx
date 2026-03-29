@@ -12,7 +12,7 @@ const NAV_LINKS = [
 export function Navbar() {
   const navigate    = useNavigate();
   const location    = useLocation();
-  const { signOut } = useAuth();
+  const { signOut, isAdmin, isProfesor } = useAuth();
 
   const handleSignOut = async () => {
     await signOut();
@@ -67,6 +67,38 @@ export function Navbar() {
               </button>
             );
           })}
+          {isProfesor && (
+            <button onClick={() => navigate('/profesor')} style={{
+              padding: '7px 16px', borderRadius: 6,
+              border: `1px solid ${location.pathname.startsWith('/profesor') ? C.blue + '40' : 'transparent'}`,
+              background: location.pathname.startsWith('/profesor') ? C.blue + '10' : 'transparent',
+              color: location.pathname.startsWith('/profesor') ? C.blue : C.textSec,
+              fontSize: 13, fontWeight: location.pathname.startsWith('/profesor') ? 600 : 400,
+              cursor: 'pointer', transition: 'all 0.15s',
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+              onMouseEnter={e => { if (!location.pathname.startsWith('/profesor')) { e.currentTarget.style.color = C.blue; e.currentTarget.style.background = C.panel; } }}
+              onMouseLeave={e => { if (!location.pathname.startsWith('/profesor')) { e.currentTarget.style.color = C.textSec; e.currentTarget.style.background = 'transparent'; } }}
+            >
+              Mis alumnos
+            </button>
+          )}
+          {isAdmin && (
+            <button onClick={() => navigate('/admin')} style={{
+              padding: '7px 16px', borderRadius: 6,
+              border: `1px solid ${location.pathname === '/admin' ? C.red + '40' : 'transparent'}`,
+              background: location.pathname === '/admin' ? C.red + '10' : 'transparent',
+              color: location.pathname === '/admin' ? C.red : C.textSec,
+              fontSize: 13, fontWeight: location.pathname === '/admin' ? 600 : 400,
+              cursor: 'pointer', transition: 'all 0.15s',
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+              onMouseEnter={e => { if (location.pathname !== '/admin') { e.currentTarget.style.color = C.red; e.currentTarget.style.background = C.panel; } }}
+              onMouseLeave={e => { if (location.pathname !== '/admin') { e.currentTarget.style.color = C.textSec; e.currentTarget.style.background = 'transparent'; } }}
+            >
+              Admin
+            </button>
+          )}
         </nav>
 
         {/* Acciones derecha */}

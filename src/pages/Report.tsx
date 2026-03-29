@@ -129,6 +129,13 @@ const dimensionInfo: Record<string, { title: string; desc: string }> = {
 /* ═══════════════════════════════════════════════════════════════
    MAIN COMPONENT
 ═══════════════════════════════════════════════════════════════ */
+type ProfesorComment = {
+  id: string;
+  contenido: string;
+  created_at: string;
+  autor_name: string;
+};
+
 export function Report() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -139,6 +146,7 @@ export function Report() {
   const [loading, setLoading]           = useState(true);
   const [visibleLines, setVisibleLines] = useState({ score_global: true, forehand: true, backhand: true, saque: true });
   const [radarStroke, setRadarStroke]   = useState('todos');
+  const [profesorComments, setProfesorComments] = useState<ProfesorComment[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -161,6 +169,18 @@ export function Report() {
             backhand: s.scores_detalle?.backhand?.total ?? 0,
             saque:    s.scores_detalle?.saque?.total    ?? 0,
           })));
+        }
+        const { data: commentsData } = await supabase
+          .from('session_comments')
+          .select('id, contenido, created_at, profiles(first_name, last_name, email)')
+          .eq('session_id', id)
+          .order('created_at', { ascending: true });
+        if (commentsData) {
+          setProfesorComments(commentsData.map((c: any) => {
+            const p = c.profiles ?? {};
+            const name = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.email || 'Profesor';
+            return { id: c.id, contenido: c.contenido, created_at: c.created_at, autor_name: name };
+          }));
         }
       } catch (err) {
         console.error('Error cargando sesión:', err);
@@ -767,6 +787,28 @@ export function Report() {
           {activeTab === 'report'      && <TabReport />}
           {activeTab === 'exercises'   && <TabExercises />}
         </main>
+
+        {profesorComments.length > 0 && (
+          <div style={{ padding: '0 32px 32px', maxWidth: 900 }}>
+            <div style={{ background: C.accentDark + '08', border: `1px solid ${C.accentDark}25`, borderRadius: 12, padding: '20px 22px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.accentDark }} />
+                <span style={{ fontFamily: "'Syne', sans-serif", fontSize: 14, fontWeight: 700, color: C.accentDark }}>Feedback de tu profesor</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {profesorComments.map(c => (
+                  <div key={c.id} style={{ padding: '12px 14px', background: C.surface, border: `1px solid ${C.accentDark}20`, borderRadius: 8 }}>
+                    <div style={{ fontSize: 13, color: C.textPri, lineHeight: 1.6 }}>{c.contenido}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: C.accentDark, fontFamily: "'DM Mono', monospace" }}>{c.autor_name}</span>
+                      <span style={{ fontSize: 10, color: C.textMut }}>· {new Date(c.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         <footer style={{ borderTop: `1px solid ${C.border}`, padding: '20px 32px', textAlign: 'center', fontSize: 11, color: C.textMut, fontFamily: "'DM Mono', monospace" }}>
           TennisAI © 2026 — Análisis biomecánico automático potenciado por IA
