@@ -188,7 +188,7 @@ export function Upload() {
   const handleFile = (file: File) => {
     setError('');
     if (!file.type.includes('mp4') && !file.name.endsWith('.mp4')) { setError('Solo se aceptan archivos .mp4'); return; }
-    if (file.size > 500 * 1024 * 1024) { setError('El archivo supera el límite de 500MB'); return; }
+    if (file.size > 800 * 1024 * 1024) { setError('El archivo supera el límite de 800MB'); return; }
     setSelectedFile(file); setStep(3);
   };
 
