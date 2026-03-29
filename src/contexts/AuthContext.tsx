@@ -39,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       (async () => {
+        setLoading(true);
         setUser(session?.user ?? null);
         if (session?.user) {
           const r = await fetchRole(session.user.id);
@@ -46,6 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           setRole(null);
         }
+        setLoading(false);
       })();
     });
 
