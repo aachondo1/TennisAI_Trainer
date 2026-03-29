@@ -7,6 +7,7 @@ export function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState<'user' | 'profesor'>('user');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
@@ -29,7 +30,7 @@ export function Register() {
     setLoading(true);
 
     try {
-      await signUp(email, password);
+      await signUp(email, password, role);
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Error al crear la cuenta');
@@ -101,6 +102,34 @@ export function Register() {
                 className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition"
                 placeholder="Confirma tu contraseña"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-3">¿Cuál es tu rol?</label>
+              <div className="flex gap-4">
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="user"
+                    checked={role === 'user'}
+                    onChange={(e) => setRole(e.target.value as 'user' | 'profesor')}
+                    className="w-4 h-4 text-cyan-600 bg-gray-900 border-gray-700 focus:ring-2 focus:ring-cyan-500"
+                  />
+                  <span className="ml-2 text-gray-300">Jugador</span>
+                </label>
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="radio"
+                    name="role"
+                    value="profesor"
+                    checked={role === 'profesor'}
+                    onChange={(e) => setRole(e.target.value as 'user' | 'profesor')}
+                    className="w-4 h-4 text-cyan-600 bg-gray-900 border-gray-700 focus:ring-2 focus:ring-cyan-500"
+                  />
+                  <span className="ml-2 text-gray-300">Profesor</span>
+                </label>
+              </div>
             </div>
 
             <button

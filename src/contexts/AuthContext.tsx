@@ -10,7 +10,7 @@ type AuthContextType = {
   role: Role | null;
   isAdmin: boolean;
   isProfesor: boolean;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, role?: Role) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, role: Role = 'user') => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -64,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await supabase.from('profiles').insert({
         id: data.user.id,
         email: data.user.email,
+        role,
       });
     }
   };
