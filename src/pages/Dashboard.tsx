@@ -325,7 +325,7 @@ function MicroMetricsPanel({ sessions }: { sessions: any[] }) {
   // ── Datos disponibles HOY ────────────────────────────────
   // velocidad_pelota_max por golpe — vive en scores_detalle.[golpe].metricas_clave
   const velData = sessions.map(s => ({
-    date:     new Date(s.created_at).toLocaleDateString('es-ES', { day:'2-digit', month:'short' }),
+    date:     new Date(s.actual_session_date ?? s.created_at).toLocaleDateString('es-ES', { day:'2-digit', month:'short' }),
     forehand: s.scores_detalle?.forehand?.metricas_clave?.velocidad_pelota_max ?? null,
     backhand: s.scores_detalle?.backhand?.metricas_clave?.velocidad_pelota_max ?? null,
     saque:    s.scores_detalle?.saque?.metricas_clave?.velocidad_pelota_max    ?? null,
@@ -638,7 +638,7 @@ export default function Dashboard() {
     });
 
     const evolution = sessions.map(s => ({
-      date:     new Date(s.created_at).toLocaleDateString('es-ES',{day:'2-digit',month:'short'}),
+      date:     new Date(s.actual_session_date ?? s.created_at).toLocaleDateString('es-ES',{day:'2-digit',month:'short'}),
       global:   s.global_score,
       forehand: s.scores_detalle?.forehand?.total ?? 0,
       backhand: s.scores_detalle?.backhand?.total ?? 0,

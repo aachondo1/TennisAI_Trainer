@@ -7,7 +7,7 @@ import {
 import {
   ChevronDown, TrendingUp, Eye, EyeOff, Info,
   BarChart2, BookOpen, Dumbbell, Target, ArrowLeft, Loader2,
-  Activity,
+  Activity, AlertCircle, ArrowUp, ArrowDown, AlertTriangle,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useNavigate, useParams, Link } from 'react-router-dom';
@@ -103,6 +103,241 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 );
 
 const Divider = () => <div style={{ height: 1, background: C.border, margin: '16px 0' }} />;
+
+const QualityScoreHeader = ({ quality_score }: { quality_score?: any }) => {
+  if (!quality_score) return null;
+
+  const overall = quality_score.overall_quality_score ?? 0;
+  const mediapipe = quality_score.mediapipe_coverage ?? 0;
+  const ballSync = quality_score.ball_sync_rate ?? 0;
+
+  const isLowQuality = overall < 0.55;
+
+  // Color for overall score
+  const getQualityColor = (val: number, isPercent = false) => {
+    const v = isPercent ? val : val * 100;
+    if (v >= 70) return C.green;
+    if (v >= 55) return C.amber;
+    return C.red;
+  };
+
+  const overallColor = getQualityColor(overall);
+  const mediapipeColor = getQualityColor(mediapipe / 100);
+  const ballSyncColor = getQualityColor(ballSync / 100);
+
+  return (
+    <div style={{
+      background: isLowQuality ? C.amber + '10' : 'transparent',
+      borderBottom: isLowQuality ? `2px solid ${C.amber}` : 'none',
+      padding: isLowQuality ? '16px 32px' : '0',
+    }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        {isLowQuality && (
+          <div style={{
+            background: C.amber + '20',
+            border: `1px solid ${C.amber}40`,
+            borderRadius: 8,
+            padding: '12px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            marginBottom: 16,
+          }}>
+            <AlertTriangle size={16} color={C.amber} />
+            <span style={{ fontSize: 13, color: C.amber, fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}>
+              Calidad de datos baja. Algunos análisis pueden ser menos precisos.
+            </span>
+          </div>
+        )}
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 16,
+          padding: isLowQuality ? '16px 0' : '0',
+        }}>
+          {/* Overall Quality Score */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '12px 14px',
+            background: overallColor + '08',
+            border: `1px solid ${overallColor}20`,
+            borderRadius: 8,
+          }}>
+            <div style={{
+              width: 48,
+              height: 48,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: overallColor + '15',
+              borderRadius: 6,
+            }}>
+              <span style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: 16,
+                fontWeight: 600,
+                color: overallColor,
+              }}>
+                {Math.round(overall * 100)}%
+              </span>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                marginBottom: 4,
+              }}>
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: C.textMut,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  fontFamily: "'DM Mono', monospace",
+                }}>
+                  Calidad General
+                </span>
+                <InfoTooltip
+                  title="Calidad General"
+                  description="Puntuación general de calidad de procesamiento del video. Combina cobertura de pose y sincronización de pelota."
+                />
+              </div>
+              <div style={{
+                fontSize: 12,
+                color: C.textSec,
+                lineHeight: 1.4,
+              }}>
+                {overall >= 0.75 ? 'Excelente' : overall >= 0.55 ? 'Aceptable' : 'Baja'}
+              </div>
+            </div>
+          </div>
+
+          {/* MediaPipe Coverage */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '12px 14px',
+            background: mediapipeColor + '08',
+            border: `1px solid ${mediapipeColor}20`,
+            borderRadius: 8,
+          }}>
+            <div style={{
+              width: 48,
+              height: 48,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: mediapipeColor + '15',
+              borderRadius: 6,
+            }}>
+              <span style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: 16,
+                fontWeight: 600,
+                color: mediapipeColor,
+              }}>
+                {Math.round(mediapipe)}%
+              </span>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                marginBottom: 4,
+              }}>
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: C.textMut,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  fontFamily: "'DM Mono', monospace",
+                }}>
+                  Cobertura Pose
+                </span>
+                <InfoTooltip
+                  title="Cobertura de Pose"
+                  description="Porcentaje de frames donde se detectó correctamente la pose (17/33 keypoints)."
+                />
+              </div>
+              <div style={{
+                fontSize: 12,
+                color: C.textSec,
+              }}>
+                {Math.round(mediapipe) > 80 ? 'Óptima' : 'Parcial'}
+              </div>
+            </div>
+          </div>
+
+          {/* Ball Sync Rate */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '12px 14px',
+            background: ballSyncColor + '08',
+            border: `1px solid ${ballSyncColor}20`,
+            borderRadius: 8,
+          }}>
+            <div style={{
+              width: 48,
+              height: 48,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: ballSyncColor + '15',
+              borderRadius: 6,
+            }}>
+              <span style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: 16,
+                fontWeight: 600,
+                color: ballSyncColor,
+              }}>
+                {Math.round(ballSync)}%
+              </span>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                marginBottom: 4,
+              }}>
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: C.textMut,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  fontFamily: "'DM Mono', monospace",
+                }}>
+                  Sincronización Pelota
+                </span>
+                <InfoTooltip
+                  title="Sincronización Pelota"
+                  description="Porcentaje de frames donde se sincronizó correctamente el tráckeo de la pelota con la pose."
+                />
+              </div>
+              <div style={{
+                fontSize: 12,
+                color: C.textSec,
+              }}>
+                {Math.round(ballSync) > 75 ? 'Sólida' : 'Limitada'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const customTooltipStyle = ttStyle;
 
@@ -207,7 +442,7 @@ export function Report() {
   const scores = session.scores_detalle || {};
 
   const current = {
-    date:          new Date(session.created_at).toLocaleDateString('es-ES'),
+    date:          new Date(session.actual_session_date ?? session.created_at).toLocaleDateString('es-ES'),
     globalScore:   session.global_score ?? 0,
     nivel:         session.nivel_general ?? '—',
     sessionType:   session.session_type ?? '—',
@@ -290,6 +525,131 @@ export function Report() {
     );
   };
 
+  /* ── SYNTHESIZER METADATA COMPONENTS ── */
+
+  const RootCauseCard = ({ metadata }: { metadata?: any }) => {
+    const rootCause = metadata?.root_cause;
+    if (!rootCause) return null;
+    return (
+      <div style={{ ...s.card, marginBottom: 16, borderLeft: `4px solid ${C.red}`, display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+        <AlertCircle size={24} color={C.red} style={{ marginTop: 2, flexShrink: 0 }} />
+        <div style={{ flex: 1 }}>
+          <div style={s.cardLabel}>Problema Detectado</div>
+          <p style={{ fontSize: 14, color: C.textSec, lineHeight: 1.6, margin: 0 }}>
+            {rootCause}
+          </p>
+        </div>
+      </div>
+    );
+  };
+
+  const Top3InsightsCard = ({ metadata }: { metadata?: any }) => {
+    const insights = metadata?.top_3_insights;
+    if (!insights || !Array.isArray(insights) || insights.length === 0) return null;
+
+    const impactoColorMap: Record<string, string> = {
+      alto: C.red,
+      medio: C.amber,
+      bajo: C.green,
+    };
+
+    return (
+      <div style={{ ...s.card, marginBottom: 16 }}>
+        <div style={s.cardLabel}>Top 3 Insights</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {insights.slice(0, 3).map((insight: any, idx: number) => (
+            <div key={idx} style={{
+              padding: '12px 14px',
+              background: C.panel,
+              border: `1px solid ${C.border}`,
+              borderRadius: 8,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <div style={{ fontWeight: 600, fontSize: 13, color: C.textPri }}>
+                  {insight.area || `Insight ${idx + 1}`}
+                </div>
+                <Tag color={impactoColorMap[insight.impacto] || C.amber}>
+                  {insight.impacto || 'medio'}
+                </Tag>
+              </div>
+              <p style={{ fontSize: 12, color: C.textSec, lineHeight: 1.5, margin: 0, marginBottom: 6 }}>
+                {insight.descripcion}
+              </p>
+              {insight.accionabilidad && (
+                <div style={{
+                  fontSize: 11,
+                  color: C.green,
+                  fontStyle: 'italic',
+                  paddingTop: 6,
+                  borderTop: `1px solid ${C.border}`,
+                }}>
+                  💡 Acción: {insight.accionabilidad}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const DeltaHeadlineCard = ({ metadata }: { metadata?: any }) => {
+    const deltaHeadline = metadata?.delta_headline;
+    if (!deltaHeadline) return null;
+
+    // Extract delta from comparison_delta if it exists
+    const comparison = metadata?.comparison_delta;
+    const globalDelta = comparison?.global?.delta ?? 0;
+    const isImprovement = globalDelta > 0;
+    const isDeltaSignificant = Math.abs(globalDelta) > 5 || (comparison?.global && Math.abs((globalDelta / (comparison.global.prev || 1)) * 100) > 10);
+
+    if (!isDeltaSignificant) return null;
+
+    return (
+      <div style={{
+        ...s.card,
+        marginBottom: 16,
+        background: isImprovement ? C.green + '08' : C.red + '08',
+        borderTop: `3px solid ${isImprovement ? C.green : C.red}`,
+        display: 'flex',
+        gap: 12,
+        alignItems: 'flex-start',
+      }}>
+        <div style={{
+          width: 40,
+          height: 40,
+          borderRadius: 6,
+          background: (isImprovement ? C.green : C.red) + '20',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          {isImprovement ? (
+            <ArrowUp size={20} color={C.green} />
+          ) : (
+            <ArrowDown size={20} color={C.red} />
+          )}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={s.cardLabel}>Cambio vs Sesión Anterior</div>
+          <p style={{ fontSize: 14, color: C.textSec, lineHeight: 1.6, margin: 0, marginBottom: 6 }}>
+            {deltaHeadline}
+          </p>
+          {comparison?.global && (
+            <div style{{
+              fontSize: 11,
+              color: C.textMut,
+              fontFamily: "'DM Mono', monospace",
+            }}>
+              {comparison.global.prev} → {comparison.global.current} (Δ {isImprovement ? '+' : ''}{globalDelta.toFixed(1)})
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   /* ── TAB OVERVIEW ── */
   const TabOverview = () => (
     <div>
@@ -322,6 +682,11 @@ export function Report() {
           );
         })}
       </div>
+
+      {/* New cards from synthesizer_metadata */}
+      <RootCauseCard metadata={session.synthesizer_metadata} />
+      <Top3InsightsCard metadata={session.synthesizer_metadata} />
+      <DeltaHeadlineCard metadata={session.synthesizer_metadata} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 16, marginBottom: 16 }}>
         <div style={s.card}>
@@ -512,7 +877,37 @@ export function Report() {
                   <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 20, fontWeight: 700 }}>{nombre}</div>
                   <Tag color={color}>{g.nivel}</Tag>
                 </div>
-                <div style={{ marginLeft: 'auto', fontSize: 12, color: C.textSec }}>
+                {/* Delta vs previous session */}
+              {session.synthesizer_metadata?.comparison_delta?.[gk] && (() => {
+                const delta = session.synthesizer_metadata.comparison_delta[gk];
+                const deltaVal = delta.delta ?? 0;
+                const isDeltaPos = deltaVal > 0;
+                const isDeltaSig = Math.abs(deltaVal) > 5 || (delta.prev && Math.abs((deltaVal / delta.prev) * 100) > 10);
+                if (isDeltaSig) {
+                  return (
+                    <div style={{
+                      padding: '8px 12px',
+                      marginRight: 'auto',
+                      background: (isDeltaPos ? C.green : C.red) + '10',
+                      border: `1px solid ${(isDeltaPos ? C.green : C.red)}30`,
+                      borderRadius: 6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      fontSize: 12,
+                      fontFamily: "'DM Mono', monospace",
+                    }}>
+                      <span style={{ color: C.textSec }}>vs anterior:</span>
+                      <span style={{ color: C.textPri, fontWeight: 500 }}>{delta.prev ?? '—'} → {delta.current ?? '—'}</span>
+                      <span style={{ color: isDeltaPos ? C.green : C.red, fontWeight: 600 }}>
+                        {isDeltaPos ? <ArrowUp size={12} style={{ display: 'inline' }} /> : <ArrowDown size={12} style={{ display: 'inline' }} />}
+                        {' '}{isDeltaPos ? '+' : ''}{deltaVal.toFixed(1)}
+                      </span>
+                    </div>
+                  );
+                }
+              })()}
+              <div style={{ marginLeft: 'auto', fontSize: 12, color: C.textSec }}>
                   Vel. máx. <span style={{ fontFamily: "'DM Mono', monospace", color, fontWeight: 500 }}>{g.velocidad_pelota_max} px/f</span>
                 </div>
               </div>
@@ -521,18 +916,39 @@ export function Report() {
                   {scoreEntries.map(([dim, data]: [string, any]) => {
                     const info = dimensionInfo[dim] || { title: dim, desc: '' };
                     const pct = (data.score / data.max) * 100;
+                    const isMeasurementFailed = dim === 'potencia_pelota' && data.score === 0;
                     return (
-                      <div key={dim} style={s.card}>
+                      <div
+                        key={dim}
+                        style={{
+                          ...s.card,
+                          opacity: isMeasurementFailed ? 0.6 : 1,
+                          background: isMeasurementFailed ? C.panel : C.surface,
+                          borderColor: isMeasurementFailed ? C.amber + '40' : undefined,
+                          position: 'relative',
+                        }}
+                      >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             <span style={{ fontSize: 12, fontWeight: 500 }}>{info.title}</span>
                             <InfoTooltip title={info.title} description={info.desc} />
                           </div>
+                          {isMeasurementFailed && (
+                            <InfoTooltip
+                              title="No Medible"
+                              description="La validación de pelota falló en esta sesión. Esta métrica no fue calculada."
+                            />
+                          )}
                         </div>
-                        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 22, fontWeight: 500, color, marginBottom: 6 }}>
-                          {data.score}<span style={{ fontSize: 12, color: C.textMut }}>/{data.max}</span>
+                        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 22, fontWeight: 500, color: isMeasurementFailed ? C.textMut : color, marginBottom: 6 }}>
+                          {isMeasurementFailed ? '—' : data.score}<span style={{ fontSize: 12, color: C.textMut }}>/{data.max}</span>
                         </div>
-                        <MiniBar pct={pct} color={color} />
+                        <MiniBar pct={isMeasurementFailed ? 0 : pct} color={isMeasurementFailed ? C.border : color} />
+                        {isMeasurementFailed && (
+                          <div style={{ fontSize: 11, color: C.amber, marginTop: 6 }}>
+                            ⚠️ Validación de pelota fallida
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -586,6 +1002,117 @@ export function Report() {
     </div>
   );
 
+  const MejorasCard = ({ prioridades }: { prioridades?: any[] }) => {
+    if (!prioridades || !Array.isArray(prioridades) || prioridades.length === 0) return null;
+
+    const urgenciaColorMap: Record<string, string> = {
+      critica: C.red,
+      alta: C.amber,
+      media: C.blue,
+      baja: C.green,
+    };
+
+    const urgenciaLabelMap: Record<string, string> = {
+      critica: 'Crítica',
+      alta: 'Alta',
+      media: 'Media',
+      baja: 'Baja',
+    };
+
+    return (
+      <div style={s.card}>
+        <SectionLabel>Prioridades de Mejora</SectionLabel>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {prioridades.slice(0, 3).map((p: any, idx: number) => {
+            const color = urgenciaColorMap[p.urgencia] || C.amber;
+            return (
+              <div
+                key={idx}
+                style={{
+                  padding: '14px 14px',
+                  background: color + '08',
+                  border: `1px solid ${color}30`,
+                  borderRadius: 8,
+                  borderLeft: `3px solid ${color}`,
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                  <div>
+                    <div style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: C.textPri,
+                      marginBottom: 4,
+                    }}>
+                      #{p.prioridad ?? idx + 1}. {p.golpe ? p.golpe.charAt(0).toUpperCase() + p.golpe.slice(1) : 'General'}
+                    </div>
+                    <div style={{
+                      fontSize: 12,
+                      color: C.textSec,
+                      marginBottom: 4,
+                    }}>
+                      {p.dimension || 'Sin dimensión especificada'}
+                    </div>
+                  </div>
+                  <Tag color={color}>
+                    {urgenciaLabelMap[p.urgencia] || p.urgencia || 'media'}
+                  </Tag>
+                </div>
+
+                {/* Score progression */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr auto 1fr',
+                  gap: 8,
+                  alignItems: 'center',
+                  fontSize: 11,
+                  marginBottom: 8,
+                  paddingTop: 8,
+                  borderTop: `1px solid ${color}15`,
+                }}>
+                  <div>
+                    <div style={{ color: C.textMut, marginBottom: 2 }}>Score actual</div>
+                    <div style={{
+                      fontFamily: "'DM Mono', monospace",
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: C.textPri,
+                    }}>
+                      {p.score_actual ?? '—'}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'center', color: C.textMut }}>→</div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ color: C.textMut, marginBottom: 2 }}>Score objetivo</div>
+                    <div style={{
+                      fontFamily: "'DM Mono', monospace",
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: color,
+                    }}>
+                      {p.score_objetivo ?? '—'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Impact estimate */}
+                {p.impacto_estimado && (
+                  <div style={{
+                    fontSize: 11,
+                    color: C.green,
+                    fontStyle: 'italic',
+                  }}>
+                    💡 Impacto estimado: {p.impacto_estimado}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   /* ── TAB REPORT ── */
   const TabReport = () => {
     const r = scores;
@@ -627,6 +1154,7 @@ export function Report() {
             </p>
           )}
         </div>
+        <MejorasCard prioridades={session.prioridades_mejora} />
       </div>
     );
   };
@@ -772,6 +1300,8 @@ export function Report() {
             </div>
           </div>
         </header>
+
+        <QualityScoreHeader quality_score={session.quality_score} />
 
         <nav style={s.nav}>
           <div style={s.navInner}>

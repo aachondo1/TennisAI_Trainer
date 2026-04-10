@@ -127,7 +127,7 @@ export function ProfesorAlumno() {
       [...sessionsData]
         .reverse()
         .map((s: any) => ({
-          date:  new Date(s.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }),
+          date:  new Date(s.actual_session_date ?? s.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }),
           score: s.global_score ?? 0,
         }))
     );
