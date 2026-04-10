@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 
 // ─── TIPOS ────────────────────────────────────────────────────
 interface AnalysisDelta {
@@ -12,14 +12,15 @@ interface AnalysisDelta {
 }
 
 interface BoneMode {
-  pose:           number[][] | null;  // 33 x [x,y]
-  angles:         Record<string, number>;
-  analysis_delta: AnalysisDelta[];
-  score:          number;
-  averaged_from?: number;
-  timestamp?:     number;
-  ball_speed?:    number;
-  label:          string;
+  pose:                number[][] | null;  // 33 x [x,y] or [x,y,z,v]
+  ideal_pose_overlay?: number[][];         // ATP reference pose scaled to user (33 x [x,y,z,v])
+  angles:              Record<string, number>;
+  analysis_delta:      AnalysisDelta[];
+  score:               number;
+  averaged_from?:      number;
+  timestamp?:          number;
+  ball_speed?:         number;
+  label:               string;
 }
 
 interface BoneMappingData {
@@ -30,7 +31,6 @@ interface BoneMappingData {
     stroke_type:       string;
     stroke_counts:     Record<string, number>;
   };
-  ideal_pose_male: number[][];
   modes: {
     representative: BoneMode;
     best:           BoneMode;
@@ -149,13 +149,16 @@ function SkeletonSVG({ mode, idealPose, C }: {
 
         {/* Layer 1: Benchmark (dashed, emerald) */}
         <g opacity="0.4">
-          {CONNECTIONS.map(([a,b],i) => (
-            <line key={i}
-              x1={idealPts[a][0]} y1={idealPts[a][1]}
-              x2={idealPts[b][0]} y2={idealPts[b][1]}
-              stroke="#10B981" strokeWidth="1.5" strokeDasharray="5 4"
-            />
-          ))}
+          {CONNECTIONS.map(([a,b],i) => {
+            if (!idealPts[a] || !idealPts[b]) return null;
+            return (
+              <line key={i}
+                x1={idealPts[a][0]} y1={idealPts[a][1]}
+                x2={idealPts[b][0]} y2={idealPts[b][1]}
+                stroke="#10B981" strokeWidth="1.5" strokeDasharray="5 4"
+              />
+            );
+          })}
           {idealPts.map(([x,y],i) => (
             <circle key={i} cx={x} cy={y} r="2.5" fill="none" stroke="#10B981" strokeWidth="1" opacity="0.5"/>
           ))}
@@ -163,14 +166,17 @@ function SkeletonSVG({ mode, idealPose, C }: {
 
         {/* Layer 2: User skeleton */}
         <g>
-          {CONNECTIONS.map(([a,b],i) => (
-            <line key={i}
-              x1={userPts[a][0]} y1={userPts[a][1]}
-              x2={userPts[b][0]} y2={userPts[b][1]}
-              stroke={boneColor(a, b, delta)}
-              strokeWidth="2.5" strokeLinecap="round" opacity="0.95"
-            />
-          ))}
+          {CONNECTIONS.map(([a,b],i) => {
+            if (!userPts[a] || !userPts[b]) return null;
+            return (
+              <line key={i}
+                x1={userPts[a][0]} y1={userPts[a][1]}
+                x2={userPts[b][0]} y2={userPts[b][1]}
+                stroke={boneColor(a, b, delta)}
+                strokeWidth="2.5" strokeLinecap="round" opacity="0.95"
+              />
+            );
+          })}
         </g>
 
         {/* Layer 3: Nodes */}
@@ -286,7 +292,6 @@ function JointCards({ delta, C }: { delta: AnalysisDelta[]; C: Record<string,str
 function TimelineMini({ timeline, C }: { timeline: BoneMappingData['timeline']; C: Record<string,string> }) {
   if (!timeline?.length) return null;
   const maxScore = 100;
-  const w = 100 / timeline.length;
   return (
     <div>
       <div style={{ fontSize:10, color:C.textMut, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:"'DM Mono',monospace", marginBottom:6 }}>
@@ -337,24 +342,29 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
   const stroke  = activeStroke || strokes[0];
   const bmData: BoneMappingData = {
     session_meta: rawBoneMapping[stroke]?.session_meta ?? {},
-    ideal_pose_male: session?.raw_data?.ideal_pose_male ?? [],
     modes: rawBoneMapping[stroke]?.modes ?? {},
     timeline: rawBoneMapping[stroke]?.timeline ?? [],
   } as BoneMappingData;
 
-  // ideal_pose_male se guarda en bone_mapping_data pero no en session_data
-  // usar el hardcodeado como fallback
-  const IDEAL_POSE_FALLBACK: number[][] = [
-    [0.50,0.06],[0.52,0.05],[0.52,0.05],[0.52,0.05],[0.48,0.05],[0.48,0.05],[0.48,0.05],[0.54,0.05],[0.46,0.05],
-    [0.52,0.07],[0.48,0.07],[0.62,0.20],[0.38,0.20],[0.70,0.31],[0.30,0.31],[0.78,0.40],[0.22,0.40],
-    [0.80,0.42],[0.20,0.42],[0.81,0.41],[0.19,0.41],[0.80,0.43],[0.20,0.43],
-    [0.55,0.50],[0.45,0.50],[0.56,0.64],[0.44,0.64],[0.56,0.79],[0.44,0.79],
-    [0.56,0.82],[0.44,0.82],[0.58,0.84],[0.42,0.84],
-  ];
-  const idealPose = bmData.ideal_pose_male?.length === 33 ? bmData.ideal_pose_male : IDEAL_POSE_FALLBACK;
-
   const currentMode = bmData.modes?.[activeMode];
   const meta        = bmData.session_meta;
+
+  // Use the ATP reference pose embedded in the current mode by the backend.
+  // Falls back to a 33-point forehand stance if the overlay is missing.
+  const IDEAL_POSE_FALLBACK: number[][] = [
+    [0.50,0.06],[0.52,0.05],[0.52,0.05],[0.52,0.05],[0.48,0.05],[0.48,0.05],[0.48,0.05],[0.54,0.05],[0.46,0.05],
+    [0.62,0.20],[0.38,0.20],
+    [0.70,0.31],[0.30,0.31],[0.78,0.40],[0.22,0.40],
+    [0.80,0.42],[0.20,0.42],[0.81,0.41],[0.19,0.41],[0.80,0.43],[0.20,0.43],
+    [0.55,0.50],[0.45,0.50],
+    [0.56,0.64],[0.44,0.64],[0.56,0.79],[0.44,0.79],
+    [0.56,0.82],[0.44,0.82],[0.58,0.84],[0.42,0.84],
+    [0.58,0.87],[0.42,0.87],
+  ];
+
+  const idealPose = currentMode?.ideal_pose_overlay?.length === 33
+    ? currentMode.ideal_pose_overlay
+    : IDEAL_POSE_FALLBACK;
 
   const modeConfig = [
     { key:'representative', label:'Promedio top-5',    color:'#3B82F6' },
