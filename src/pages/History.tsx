@@ -136,10 +136,10 @@ function SessionRow({
       {/* Date */}
       <div style={{ textAlign: 'right', flexShrink: 0 }}>
         <div style={{ fontSize: 12, color: C.textSec }}>
-          {new Date(session.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+          {new Date(session.actual_session_date ?? session.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
         </div>
         <div style={{ fontSize: 11, color: C.textMut, fontFamily: "'DM Mono', monospace" }}>
-          {new Date(session.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+          {new Date(session.actual_session_date ?? session.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
         </div>
       </div>
 
