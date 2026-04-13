@@ -15,9 +15,11 @@ type ProfileData = {
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
+      setProfileLoading(true);
       const loadProfile = async () => {
         const { data } = await supabase
           .from('profiles')
@@ -27,8 +29,11 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         if (data) {
           setProfile(data as ProfileData);
         }
+        setProfileLoading(false);
       };
       loadProfile();
+    } else {
+      setProfileLoading(false);
     }
   }, [user]);
 
@@ -41,8 +46,9 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!user) return <Navigate to="/login" />;
 
-  const isDominantHandMissing = !profile?.dominant_hand;
-  const isEquipmentMissing = !profile?.equipment_bag || profile.equipment_bag.length === 0;
+  // Only show banner after profile has loaded (avoid flash for users with complete profiles)
+  const isDominantHandMissing = !profileLoading && !profile?.dominant_hand;
+  const isEquipmentMissing = !profileLoading && (!profile?.equipment_bag || profile.equipment_bag.length === 0);
 
   return (
     <>

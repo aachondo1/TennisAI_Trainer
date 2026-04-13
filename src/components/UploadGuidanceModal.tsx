@@ -129,7 +129,7 @@ export function UploadGuidanceModal({
           </div>
 
           {/* No mostrar de nuevo checkbox */}
-          <div style={{ marginBottom: 24, paddingBottom: 24, borderTop: `1px solid ${C.border}` }}>
+          <div style={{ marginTop: 24, paddingTop: 16, marginBottom: 20, borderTop: `1px solid ${C.border}` }}>
             <label
               style={{
                 display: 'flex',

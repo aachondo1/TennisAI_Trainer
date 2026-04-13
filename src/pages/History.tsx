@@ -19,18 +19,16 @@ const scoreColor = (s: number) => {
 };
 
 const SESSION_LABELS: Record<string, string> = {
-  forehand: 'Forehand',
-  backhand: 'Backhand',
-  saque:    'Saque',
-  mezcla:   'Mezcla',
+  clase:    'Clase',
+  paleteo:  'Paleteo',
+  partido:  'Partido',
 };
 
 const FILTER_OPTIONS = [
-  { value: 'all',      label: 'Todas'    },
-  { value: 'forehand', label: 'Forehand' },
-  { value: 'backhand', label: 'Backhand' },
-  { value: 'saque',    label: 'Saque'    },
-  { value: 'mezcla',   label: 'Mezcla'   },
+  { value: 'all',     label: 'Todas'   },
+  { value: 'clase',   label: 'Clase'   },
+  { value: 'paleteo', label: 'Paleteo' },
+  { value: 'partido', label: 'Partido' },
 ];
 
 const s = {

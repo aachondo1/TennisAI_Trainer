@@ -65,7 +65,7 @@ export function IncompleteProfileBanner({
           transition: 'all 0.2s ease',
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = C.amber;
+          e.currentTarget.style.background = '#c16505';
           e.currentTarget.style.transform = 'translateX(2px)';
         }}
         onMouseLeave={(e) => {
