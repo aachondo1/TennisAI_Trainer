@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { C } from '../lib/theme';
-import { Users, Plus, AlertCircle, ChevronRight, Clock } from 'lucide-react';
+import { Users, Plus, AlertCircle, ChevronRight, Clock, BarChart2, AlertTriangle } from 'lucide-react';
 
 const fonts = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
@@ -19,6 +19,10 @@ type Alumno = {
   session_count: number;
   avg_score: number;
   last_session: string | null;
+  last_session_score: number;
+  delta_last_two: number | null;
+  session_count_last_30days: number;
+  days_without_session: number;
 };
 
 type ActivityItem = {
@@ -66,6 +70,8 @@ export function Profesor() {
   const [emailInput, setEmailInput] = useState('');
   const [addError, setAddError]     = useState('');
   const [adding, setAdding]         = useState(false);
+  const [sortBy, setSortBy]         = useState<'avg_score' | 'last_score' | 'delta' | 'sessions_30d'>('avg_score');
+  const [sortOrder, setSortOrder]   = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
     if (user) {
@@ -96,9 +102,13 @@ export function Profesor() {
       .in('user_id', ids)
       .order('created_at', { ascending: false });
 
-    const countMap: Record<string, number>    = {};
-    const scoreMap: Record<string, number[]>  = {};
-    const lastMap:  Record<string, string>    = {};
+    const countMap: Record<string, number>     = {};
+    const scoreMap: Record<string, number[]>   = {};
+    const lastMap:  Record<string, string>     = {};
+    const last30Map: Record<string, number>    = {};
+
+    const now = Date.now();
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
 
     (sessionData ?? []).forEach((s: any) => {
       countMap[s.user_id] = (countMap[s.user_id] ?? 0) + 1;
@@ -107,19 +117,34 @@ export function Profesor() {
         scoreMap[s.user_id].push(s.global_score);
       }
       if (!lastMap[s.user_id]) lastMap[s.user_id] = s.created_at;
+
+      // Contar sesiones últimos 30 días
+      if (new Date(s.created_at).getTime() > thirtyDaysAgo) {
+        last30Map[s.user_id] = (last30Map[s.user_id] ?? 0) + 1;
+      }
     });
 
-    setAlumnos((profiles ?? []).map((p: any) => ({
-      id:            p.id,
-      email:         p.email ?? '',
-      first_name:    p.first_name ?? '',
-      last_name:     p.last_name ?? '',
-      session_count: countMap[p.id] ?? 0,
-      avg_score: scoreMap[p.id]?.length
-        ? Math.round(scoreMap[p.id].reduce((a, b) => a + b, 0) / scoreMap[p.id].length)
-        : 0,
-      last_session: lastMap[p.id] ?? null,
-    })));
+    setAlumnos((profiles ?? []).map((p: any) => {
+      const scores = scoreMap[p.id] ?? [];
+      const lastSessionDate = lastMap[p.id];
+      const daysSinceLastSession = lastSessionDate
+        ? Math.floor((Date.now() - new Date(lastSessionDate).getTime()) / (1000 * 60 * 60 * 24))
+        : 999;
+
+      return {
+        id:                    p.id,
+        email:                 p.email ?? '',
+        first_name:            p.first_name ?? '',
+        last_name:             p.last_name ?? '',
+        session_count:         countMap[p.id] ?? 0,
+        avg_score:             scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0,
+        last_session:          lastSessionDate ?? null,
+        last_session_score:    scores.length > 0 ? scores[0] : 0,
+        delta_last_two:        scores.length > 1 ? scores[0] - scores[1] : null,
+        session_count_last_30days: last30Map[p.id] ?? 0,
+        days_without_session:  daysSinceLastSession,
+      };
+    }));
     setLoadingAlumnos(false);
   };
 
@@ -165,6 +190,42 @@ export function Profesor() {
       };
     }));
     setLoadingActivity(false);
+  };
+
+  const getSortedAlumnos = () => {
+    const sorted = [...alumnos];
+    sorted.sort((a, b) => {
+      let aVal = 0, bVal = 0;
+
+      switch (sortBy) {
+        case 'avg_score':
+          aVal = a.avg_score;
+          bVal = b.avg_score;
+          break;
+        case 'last_score':
+          aVal = a.last_session_score;
+          bVal = b.last_session_score;
+          break;
+        case 'delta':
+          aVal = a.delta_last_two ?? 0;
+          bVal = b.delta_last_two ?? 0;
+          break;
+        case 'sessions_30d':
+          aVal = a.session_count_last_30days;
+          bVal = b.session_count_last_30days;
+          break;
+      }
+
+      return sortOrder === 'desc' ? bVal - aVal : aVal - bVal;
+    });
+
+    return sorted;
+  };
+
+  const getRegressionAlerts = () => {
+    return alumnos.filter(a =>
+      (a.delta_last_two !== null && a.delta_last_two < -5) || a.days_without_session > 14
+    );
   };
 
   const handleAddAlumno = async () => {
@@ -226,6 +287,122 @@ export function Profesor() {
             </div>
             <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 700 }}>Mis Alumnos</div>
             <div style={{ fontSize: 14, color: C.textSec, marginTop: 4 }}>Gestiona tu lista de alumnos y sigue su progreso técnico</div>
+          </div>
+
+          {/* Sección Alertas de Regresión */}
+          {getRegressionAlerts().length > 0 && (
+            <div style={{ marginBottom: 32 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                <AlertTriangle size={15} color={C.red} />
+                <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 600, fontSize: 14, color: C.red }}>Alertas de Regresión</span>
+              </div>
+              <div style={{ display: 'grid', gap: 10 }}>
+                {getRegressionAlerts().map(a => {
+                  const name = [a.first_name, a.last_name].filter(Boolean).join(' ') || a.email;
+                  const hasRegression = a.delta_last_two !== null && a.delta_last_two < -5;
+                  const hasNoSessions = a.days_without_session > 14;
+
+                  return (
+                    <div key={a.id} style={{ background: C.red + '08', border: `1px solid ${C.red}30`, borderRadius: 10, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 8, background: C.red + '15', border: `1px solid ${C.red}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <AlertTriangle size={16} color={C.red} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: C.red, marginBottom: 2 }}>{name}</div>
+                        <div style={{ fontSize: 11, color: C.textSec }}>
+                          {hasRegression && (
+                            <span>Bajó {Math.abs(a.delta_last_two!).toFixed(0)}pts • </span>
+                          )}
+                          {hasNoSessions && (
+                            <span>Sin sesiones hace {a.days_without_session} días</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Tabla Rankings */}
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <BarChart2 size={15} color={C.accentDark} />
+              <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 600, fontSize: 14 }}>Rankings</span>
+            </div>
+            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: `1px solid ${C.border}`, background: C.panel }}>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: C.textMut, textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: "'DM Mono', monospace", cursor: 'pointer', userSelect: 'none' }}>
+                      Alumno
+                    </th>
+                    <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: 11, fontWeight: 600, color: C.textMut, textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: "'DM Mono', monospace", cursor: 'pointer', userSelect: 'none', background: sortBy === 'avg_score' ? C.blue + '10' : 'transparent' }}
+                      onClick={() => {
+                        if (sortBy === 'avg_score') setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                        else setSortBy('avg_score');
+                      }}
+                    >
+                      Promedio {sortBy === 'avg_score' && (sortOrder === 'desc' ? '↓' : '↑')}
+                    </th>
+                    <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: 11, fontWeight: 600, color: C.textMut, textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: "'DM Mono', monospace", cursor: 'pointer', userSelect: 'none', background: sortBy === 'last_score' ? C.blue + '10' : 'transparent' }}
+                      onClick={() => {
+                        if (sortBy === 'last_score') setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                        else setSortBy('last_score');
+                      }}
+                    >
+                      Última {sortBy === 'last_score' && (sortOrder === 'desc' ? '↓' : '↑')}
+                    </th>
+                    <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: 11, fontWeight: 600, color: C.textMut, textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: "'DM Mono', monospace", cursor: 'pointer', userSelect: 'none', background: sortBy === 'delta' ? C.blue + '10' : 'transparent' }}
+                      onClick={() => {
+                        if (sortBy === 'delta') setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                        else setSortBy('delta');
+                      }}
+                    >
+                      Δ 2 {sortBy === 'delta' && (sortOrder === 'desc' ? '↓' : '↑')}
+                    </th>
+                    <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: 11, fontWeight: 600, color: C.textMut, textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: "'DM Mono', monospace", cursor: 'pointer', userSelect: 'none', background: sortBy === 'sessions_30d' ? C.blue + '10' : 'transparent' }}
+                      onClick={() => {
+                        if (sortBy === 'sessions_30d') setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                        else setSortBy('sessions_30d');
+                      }}
+                    >
+                      30d {sortBy === 'sessions_30d' && (sortOrder === 'desc' ? '↓' : '↑')}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loadingAlumnos ? (
+                    <tr>
+                      <td colSpan={5} style={{ padding: '24px', textAlign: 'center', color: C.textMut }}>Cargando...</td>
+                    </tr>
+                  ) : getSortedAlumnos().length === 0 ? (
+                    <tr>
+                      <td colSpan={5} style={{ padding: '24px', textAlign: 'center', color: C.textMut }}>Sin alumnos</td>
+                    </tr>
+                  ) : (
+                    getSortedAlumnos().map((a) => {
+                      const name = [a.first_name, a.last_name].filter(Boolean).join(' ') || a.email;
+                      const deltaColor = a.delta_last_two === null ? C.textMut : a.delta_last_two < -5 ? C.red : a.delta_last_two > 5 ? C.green : C.textSec;
+                      const hasRegression = a.delta_last_two !== null && a.delta_last_two < -5;
+
+                      return (
+                        <tr key={a.id} style={{ borderTop: `1px solid ${C.border}`, background: hasRegression ? C.red + '05' : 'transparent' }}>
+                          <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 500, color: C.textPri, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</td>
+                          <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: 12, fontWeight: 600, color: scoreColor(a.avg_score), fontFamily: "'DM Mono', monospace" }}>{a.avg_score}</td>
+                          <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: 12, fontWeight: 600, color: scoreColor(a.last_session_score), fontFamily: "'DM Mono', monospace" }}>{a.last_session_score}</td>
+                          <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: 12, fontWeight: 600, color: deltaColor, fontFamily: "'DM Mono', monospace" }}>
+                            {a.delta_last_two === null ? '—' : `${a.delta_last_two > 0 ? '+' : ''}${a.delta_last_two.toFixed(0)}`}
+                          </td>
+                          <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: 12, fontWeight: 600, color: C.textSec, fontFamily: "'DM Mono', monospace" }}>{a.session_count_last_30days}</td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 28, alignItems: 'start' }}>
