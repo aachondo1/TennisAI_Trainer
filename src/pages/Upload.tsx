@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { UploadGuidanceModal } from '../components/UploadGuidanceModal';
 import { supabase } from '../lib/supabase';
 import { useJobPoller, saveJob, clearJob, type JobStatus } from '../hooks/useJobPoller';
 import { Upload as UploadIcon, Film, Check, Camera, CalendarDays, Briefcase, Plus, AlertCircle } from 'lucide-react';
@@ -153,6 +154,7 @@ export function Upload() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragging,     setDragging]     = useState(false);
   const [error,        setError]        = useState('');
+  const [showGuidance, setShowGuidance] = useState(!localStorage.getItem('uploadGuideShown'));
 
   // ── Upload progress (solo durante el XHR, antes del spawn) ──
   const [uploadProgress, setUploadProgress] = useState(0); // 0-100
@@ -406,9 +408,19 @@ export function Upload() {
   /* ══════════════════════════════════════════════════════════════
      MAIN WIZARD UI
   ══════════════════════════════════════════════════════════════ */
+  const handleGuidanceContinue = () => {
+    setShowGuidance(false);
+  };
+
   return (
     <>
       <style>{fonts}</style>
+      {showGuidance && (
+        <UploadGuidanceModal
+          onContinue={handleGuidanceContinue}
+          onDismiss={handleGuidanceContinue}
+        />
+      )}
       <div style={{ minHeight: '100vh', background: C.bg, fontFamily: "'DM Sans', sans-serif", color: C.textPri }}>
         <main style={{ maxWidth: 800, margin: '0 auto', padding: '48px 32px' }}>
           <div style={{ marginBottom: 40, animation: 'fadeIn 0.4s ease' }}>
