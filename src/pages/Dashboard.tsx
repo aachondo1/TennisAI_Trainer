@@ -520,6 +520,11 @@ function MicroMetricsPanel({ sessions }: { sessions: any[] }) {
 /* ════════════════════════════════════════════════════════════════
    MAIN DASHBOARD
 ════════════════════════════════════════════════════════════════ */
+type ProfileData = {
+  dominant_hand: 'right' | 'left' | null;
+  equipment_bag: Array<{ id: string; brand: string; model: string }>;
+};
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [all, setAll]             = useState<any[]>([]);
@@ -528,25 +533,39 @@ export default function Dashboard() {
   const [customFrom, setCF]       = useState('');
   const [customTo, setCT]         = useState('');
   const [showDD, setShowDD]       = useState(false);
+  const [profile, setProfile]     = useState<ProfileData | null>(null);
+  const [checklistOpen, setChecklistOpen] = useState(true);
 
   // Banner state
   const [activeJob, setActiveJob]           = useState<StoredJob | null>(null);
   const [completedSessionId, setCompletedId] = useState<string | null>(null);
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
-  // Load sessions
+  // Load sessions and profile
   useEffect(() => {
     (async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { navigate('/login'); return; }
+
+        // Load sessions
         const { data, error } = await supabase.from('sessions').select('*')
           .eq('user_id', user.id).order('created_at', { ascending: true });
         if (error) throw error;
         setAll(data || []);
+
+        // Load profile
+        const { data: profileData } = await supabase.from('profiles')
+          .select('dominant_hand, equipment_bag')
+          .eq('id', user.id)
+          .single();
+        if (profileData) {
+          setProfile(profileData as ProfileData);
+        }
       } catch(e) { console.error(e); }
       finally { setLoading(false); }
     })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Check for active job on mount
@@ -668,23 +687,79 @@ export default function Dashboard() {
     </>
   );
 
-  if (!all.length) return (
-    <>
-      <style>{fonts}</style>
-      <div style={{ minHeight:'100vh', background:C.bg, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:20, fontFamily:"'DM Sans',sans-serif" }}>
-        <div style={{ width:64, height:64, background:C.accent+'18', borderRadius:16, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2" strokeLinecap="round">
-            <circle cx="12" cy="12" r="10"/><path d="M12 2C6 8 6 16 12 22"/><path d="M12 2C18 8 18 16 12 22"/><line x1="2" y1="12" x2="22" y2="12"/>
-          </svg>
+  if (!all.length) {
+    const checklistItems = [
+      { label: 'Cuenta creada', completed: true },
+      { label: 'Perfil completado (mano dominante + equipo)', completed: profile !== null && profile.dominant_hand !== null && (profile.equipment_bag?.length ?? 0) > 0 },
+      { label: 'Primer video subido', completed: false },
+      { label: 'Análisis completado', completed: false },
+    ];
+
+    return (
+      <>
+        <style>{fonts}</style>
+        <div style={{ minHeight:'100vh', background:C.bg, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:24, fontFamily:"'DM Sans',sans-serif", padding:'32px' }}>
+          <div style={{ width:64, height:64, background:C.accent+'18', borderRadius:16, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.accent} strokeWidth="2" strokeLinecap="round">
+              <circle cx="12" cy="12" r="10"/><path d="M12 2C6 8 6 16 12 22"/><path d="M12 2C18 8 18 16 12 22"/><line x1="2" y1="12" x2="22" y2="12"/>
+            </svg>
+          </div>
+
+          <div style={{ textAlign:'center' }}>
+            <div style={{ fontFamily:"'Syne',sans-serif", fontSize:28, fontWeight:700, color:C.textPri, marginBottom:8 }}>Bienvenido a TennisAI Trainer</div>
+            <div style={{ fontSize:14, color:C.textSec }}>Tu plataforma de análisis biomecánico</div>
+          </div>
+
+          {/* Checklist */}
+          <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, padding:'16px 20px', width:'100%', maxWidth:400 }}>
+            <button
+              onClick={() => setChecklistOpen(!checklistOpen)}
+              style={{
+                width:'100%',
+                display:'flex',
+                alignItems:'center',
+                justifyContent:'space-between',
+                background:'none',
+                border:'none',
+                cursor:'pointer',
+                padding:0,
+                fontSize:14,
+                fontWeight:600,
+                color:C.textPri,
+              }}
+            >
+              <span>Mi progreso</span>
+              <ChevronDown size={18} style={{ transform:checklistOpen?'rotate(180deg)':'rotate(0)', transition:'transform 0.2s' }} />
+            </button>
+
+            {checklistOpen && (
+              <div style={{ marginTop:16, display:'flex', flexDirection:'column', gap:12 }}>
+                {checklistItems.map((item, i) => (
+                  <div key={i} style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <div style={{
+                      width:20, height:20, borderRadius:4,
+                      background:item.completed ? C.accentDark : C.border,
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      flexShrink:0,
+                    }}>
+                      {item.completed && <span style={{ color:C.surface, fontSize:14, fontWeight:700 }}>✓</span>}
+                    </div>
+                    <span style={{ fontSize:13, color:item.completed ? C.textSec : C.textMut }}>
+                      {item.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button onClick={() => navigate('/upload')} style={{ padding:'12px 28px', background:C.accent, border:'none', borderRadius:8, fontWeight:700, fontSize:14, cursor:'pointer', fontFamily:"'Syne',sans-serif", color:'#0f1923' }}>
+            Subir mi primer video
+          </button>
         </div>
-        <div style={{ fontFamily:"'Syne',sans-serif", fontSize:22, fontWeight:700, color:C.textPri }}>Aún no tienes sesiones</div>
-        <div style={{ fontSize:14, color:C.textSec }}>Sube tu primer video para ver tus estadísticas aquí</div>
-        <button onClick={() => navigate('/upload')} style={{ padding:'12px 28px', background:C.accent, border:'none', borderRadius:8, fontWeight:700, fontSize:14, cursor:'pointer', fontFamily:"'Syne',sans-serif", color:'#0f1923' }}>
-          Subir video
-        </button>
-      </div>
-    </>
-  );
+      </>
+    );
+  }
 
   const activeLabel = PRESETS.find(p => p.key === preset)?.label || 'Personalizado';
 

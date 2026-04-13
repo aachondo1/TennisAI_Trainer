@@ -19,18 +19,16 @@ const scoreColor = (s: number) => {
 };
 
 const SESSION_LABELS: Record<string, string> = {
-  forehand: 'Forehand',
-  backhand: 'Backhand',
-  saque:    'Saque',
-  mezcla:   'Mezcla',
+  clase:    'Clase',
+  paleteo:  'Paleteo',
+  partido:  'Partido',
 };
 
 const FILTER_OPTIONS = [
-  { value: 'all',      label: 'Todas'    },
-  { value: 'forehand', label: 'Forehand' },
-  { value: 'backhand', label: 'Backhand' },
-  { value: 'saque',    label: 'Saque'    },
-  { value: 'mezcla',   label: 'Mezcla'   },
+  { value: 'all',     label: 'Todas'   },
+  { value: 'clase',   label: 'Clase'   },
+  { value: 'paleteo', label: 'Paleteo' },
+  { value: 'partido', label: 'Partido' },
 ];
 
 const s = {
@@ -212,13 +210,43 @@ export function History() {
   const [filtered,    setFiltered]    = useState<Session[]>([]);
   const [loading,     setLoading]     = useState(true);
   const [filterType,  setFilterType]  = useState('all');
+  const [filterRacket, setFilterRacket] = useState<string | null>(null);
+  const [scoreRange, setScoreRange] = useState([0, 100]);
+  const [dateRange, setDateRange] = useState<[string | null, string | null]>([null, null]);
   const [deletingId,  setDeletingId]  = useState<string | null>(null);
 
   useEffect(() => { loadSessions(); }, []);
 
   useEffect(() => {
-    setFiltered(filterType === 'all' ? sessions : sessions.filter(s => s.session_type === filterType));
-  }, [filterType, sessions]);
+    let result = sessions;
+
+    // Filter by session type
+    if (filterType !== 'all') {
+      result = result.filter(s => s.session_type === filterType);
+    }
+
+    // Filter by racket
+    if (filterRacket) {
+      result = result.filter(s => s.equipment_used?.id === filterRacket);
+    }
+
+    // Filter by score range
+    result = result.filter(s => s.global_score >= scoreRange[0] && s.global_score <= scoreRange[1]);
+
+    // Filter by date range
+    if (dateRange[0]) {
+      const fromDate = new Date(dateRange[0]);
+      fromDate.setHours(0, 0, 0, 0);
+      result = result.filter(s => new Date(s.created_at) >= fromDate);
+    }
+    if (dateRange[1]) {
+      const toDate = new Date(dateRange[1]);
+      toDate.setHours(23, 59, 59, 999);
+      result = result.filter(s => new Date(s.created_at) <= toDate);
+    }
+
+    setFiltered(result);
+  }, [filterType, filterRacket, scoreRange, dateRange, sessions]);
 
   const loadSessions = async () => {
     try {
@@ -264,6 +292,24 @@ export function History() {
   };
 
   const t = trend();
+
+  // Get unique rackets from sessions
+  const rackets = Array.from(
+    new Map(
+      sessions
+        .filter(s => s.equipment_used?.id)
+        .map(s => [s.equipment_used!.id, s.equipment_used!])
+    ).values()
+  );
+
+  const hasActiveFilters = filterType !== 'all' || filterRacket !== null || scoreRange[0] > 0 || scoreRange[1] < 100 || dateRange[0] || dateRange[1];
+
+  const clearFilters = () => {
+    setFilterType('all');
+    setFilterRacket(null);
+    setScoreRange([0, 100]);
+    setDateRange([null, null]);
+  };
 
   if (loading) return (
     <>
@@ -313,20 +359,141 @@ export function History() {
           </div>
 
           {/* FILTERS */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-            <Filter size={13} color={C.textMut} />
-            <div style={{ display: 'flex', gap: 6 }}>
-              {FILTER_OPTIONS.map(opt => (
-                <button key={opt.value} onClick={() => setFilterType(opt.value)} style={{
-                  padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer',
-                  fontFamily: "'DM Sans', sans-serif", transition: 'all 0.15s',
-                  border: `1px solid ${filterType === opt.value ? C.accent : C.border}`,
-                  background: filterType === opt.value ? C.accent + '15' : 'transparent',
-                  color: filterType === opt.value ? C.accent : C.textSec,
-                }}>
-                  {opt.label}
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+              <Filter size={13} color={C.textMut} />
+              <span style={{ fontSize: 12, fontWeight: 600, color: C.textMut, textTransform: 'uppercase' }}>Filtros</span>
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  style={{
+                    fontSize: 11,
+                    color: C.amber,
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
+                >
+                  Limpiar todo
                 </button>
-              ))}
+              )}
+            </div>
+
+            {/* Filter UI Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+              {/* Session Type */}
+              <div style={{ ...s.card, padding: '12px 14px' }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: C.textMut, marginBottom: 8, textTransform: 'uppercase' }}>Tipo sesión</div>
+                <select
+                  value={filterType}
+                  onChange={e => setFilterType(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '6px 10px',
+                    borderRadius: 6,
+                    border: `1px solid ${C.border}`,
+                    background: C.surface,
+                    color: C.textPri,
+                    fontSize: 13,
+                    fontFamily: "'DM Sans', sans-serif",
+                    cursor: 'pointer',
+                  }}
+                >
+                  {FILTER_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Racket */}
+              {rackets.length > 0 && (
+                <div style={{ ...s.card, padding: '12px 14px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: C.textMut, marginBottom: 8, textTransform: 'uppercase' }}>Raqueta</div>
+                  <select
+                    value={filterRacket ?? ''}
+                    onChange={e => setFilterRacket(e.target.value || null)}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      borderRadius: 6,
+                      border: `1px solid ${C.border}`,
+                      background: C.surface,
+                      color: C.textPri,
+                      fontSize: 13,
+                      fontFamily: "'DM Sans', sans-serif",
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <option value="">Todas</option>
+                    {rackets.map(r => (
+                      <option key={r.id} value={r.id}>{r.nickname || `${r.brand} ${r.model}`}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Score Range */}
+              <div style={{ ...s.card, padding: '12px 14px' }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: C.textMut, marginBottom: 8, textTransform: 'uppercase' }}>Score: {scoreRange[0]}-{scoreRange[1]}</div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={scoreRange[0]}
+                  onChange={e => setScoreRange([Math.min(Number(e.target.value), scoreRange[1]), scoreRange[1]])}
+                  style={{ width: '100%', marginBottom: 6 }}
+                />
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={scoreRange[1]}
+                  onChange={e => setScoreRange([scoreRange[0], Math.max(Number(e.target.value), scoreRange[0])])}
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              {/* Date Range */}
+              <div style={{ ...s.card, padding: '12px 14px' }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: C.textMut, marginBottom: 8, textTransform: 'uppercase' }}>Desde</div>
+                <input
+                  type="date"
+                  value={dateRange[0] || ''}
+                  onChange={e => setDateRange([e.target.value || null, dateRange[1]])}
+                  style={{
+                    width: '100%',
+                    padding: '6px 10px',
+                    borderRadius: 6,
+                    border: `1px solid ${C.border}`,
+                    background: C.surface,
+                    color: C.textPri,
+                    fontSize: 13,
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
+                />
+              </div>
+
+              {/* Date To */}
+              <div style={{ ...s.card, padding: '12px 14px' }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: C.textMut, marginBottom: 8, textTransform: 'uppercase' }}>Hasta</div>
+                <input
+                  type="date"
+                  value={dateRange[1] || ''}
+                  onChange={e => setDateRange([dateRange[0], e.target.value || null])}
+                  style={{
+                    width: '100%',
+                    padding: '6px 10px',
+                    borderRadius: 6,
+                    border: `1px solid ${C.border}`,
+                    background: C.surface,
+                    color: C.textPri,
+                    fontSize: 13,
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
+                />
+              </div>
             </div>
           </div>
 
@@ -335,7 +502,7 @@ export function History() {
             <div style={{ ...s.card, textAlign: 'center', padding: '48px 24px' }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>🎾</div>
               <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 6 }}>
-                {filterType === 'all' ? 'Aún no tienes sesiones' : `No hay sesiones de tipo ${SESSION_LABELS[filterType]}`}
+                {!hasActiveFilters ? 'Aún no tienes sesiones' : `No hay sesiones con estos filtros`}
               </div>
               <div style={{ fontSize: 13, color: C.textSec, marginBottom: 20 }}>Sube un video para comenzar</div>
               <button onClick={() => navigate('/upload')} style={{
