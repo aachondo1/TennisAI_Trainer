@@ -19,6 +19,8 @@ export type Session = {
   reporte_narrativo: string;
   plan_ejercicios: ExercisePlan[];
   scores_detalle: ScoresDetalle;
+  equipment_used?: Racket | null;
+  actual_session_date?: string | null;
   created_at: string;
 };
 

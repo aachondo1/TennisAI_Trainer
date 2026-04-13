@@ -565,7 +565,8 @@ export default function Dashboard() {
       } catch(e) { console.error(e); }
       finally { setLoading(false); }
     })();
-  }, [navigate]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Check for active job on mount
   useEffect(() => {
@@ -689,7 +690,7 @@ export default function Dashboard() {
   if (!all.length) {
     const checklistItems = [
       { label: 'Cuenta creada', completed: true },
-      { label: 'Perfil completado (mano dominante + equipo)', completed: profile?.dominant_hand !== null && profile?.equipment_bag?.length > 0 },
+      { label: 'Perfil completado (mano dominante + equipo)', completed: profile !== null && profile.dominant_hand !== null && (profile.equipment_bag?.length ?? 0) > 0 },
       { label: 'Primer video subido', completed: false },
       { label: 'Análisis completado', completed: false },
     ];

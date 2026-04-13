@@ -502,7 +502,7 @@ export function History() {
             <div style={{ ...s.card, textAlign: 'center', padding: '48px 24px' }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>🎾</div>
               <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 6 }}>
-                {filterType === 'all' ? 'Aún no tienes sesiones' : `No hay sesiones de tipo ${SESSION_LABELS[filterType]}`}
+                {!hasActiveFilters ? 'Aún no tienes sesiones' : `No hay sesiones con estos filtros`}
               </div>
               <div style={{ fontSize: 13, color: C.textSec, marginBottom: 20 }}>Sube un video para comenzar</div>
               <button onClick={() => navigate('/upload')} style={{

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { C } from '../lib/theme';
 
@@ -8,6 +9,15 @@ export function UploadGuidanceModal({
   onContinue: () => void;
   onDismiss: () => void;
 }) {
+  // Close on ESC key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onDismiss();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onDismiss]);
+
   return (
     <div
       style={{
@@ -91,8 +101,8 @@ export function UploadGuidanceModal({
                 {/* Net */}
                 <line x1="10" y1="40" x2="110" y2="40" stroke={C.amber} strokeWidth="2" strokeDasharray="4,4" />
                 {/* Camera position marker */}
-                <circle cx="60" cy="70" r="6" fill={C.blue} />
-                <text x="60" y="75" fontSize="10" textAnchor="middle" fill={C.blue} fontWeight="600">
+                <circle cx="60" cy="68" r="5" fill={C.blue} />
+                <text x="60" y="78" fontSize="8" textAnchor="middle" fill={C.blue} fontWeight="600">
                   CAM
                 </text>
               </svg>

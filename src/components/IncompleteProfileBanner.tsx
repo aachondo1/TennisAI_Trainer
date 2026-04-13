@@ -6,8 +6,8 @@ export function IncompleteProfileBanner({
   isDominantHandMissing,
   isEquipmentMissing,
 }: {
-  isDominantHandMissing?: boolean;
-  isEquipmentMissing?: boolean;
+  isDominantHandMissing: boolean;
+  isEquipmentMissing: boolean;
 }) {
   const navigate = useNavigate();
 
