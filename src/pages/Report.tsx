@@ -637,7 +637,7 @@ export function Report() {
             {deltaHeadline}
           </p>
           {comparison?.global && (
-            <div style{{
+            <div style={{
               fontSize: 11,
               color: C.textMut,
               fontFamily: "'DM Mono', monospace",
