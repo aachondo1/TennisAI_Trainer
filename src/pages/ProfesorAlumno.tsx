@@ -6,7 +6,8 @@ import {
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { C, ttStyle } from '../lib/theme';
-import { ArrowLeft, Trash2, Send, MessageSquare, ExternalLink, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Trash2, Send, MessageSquare, ExternalLink, AlertTriangle, FileDown } from 'lucide-react';
+import { generateSessionPDF } from '../lib/pdfExport';
 
 const fonts = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
@@ -65,6 +66,7 @@ export function ProfesorAlumno() {
   const [loading, setLoading] = useState(true);
   const [removing, setRemoving] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [exportingSessionId, setExportingSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user && alumnoId) loadData();
@@ -180,6 +182,37 @@ export function ProfesorAlumno() {
       .eq('profesor_id', user.id)
       .eq('alumno_id', alumnoId);
     navigate('/profesor');
+  };
+
+  const handleExportPDF = async (sessionId: string) => {
+    if (!user || !alumno) return;
+    setExportingSessionId(sessionId);
+    try {
+      // Cargar datos completos de la sesión
+      const { data: sessionData } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .single();
+
+      if (!sessionData) return;
+
+      // Cargar datos del profesor
+      const { data: profesorData } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, email')
+        .eq('id', user.id)
+        .single();
+
+      const profesor = profesorData ?? { first_name: '', last_name: '', email: user.email ?? '' };
+
+      // Generar PDF
+      await generateSessionPDF(sessionData, alumno, profesor);
+    } catch (err) {
+      console.error('Error exportando PDF:', err);
+    } finally {
+      setExportingSessionId(null);
+    }
   };
 
   if (loading) return (
@@ -336,12 +369,31 @@ export function ProfesorAlumno() {
                           </div>
                           <div style={{ fontSize: 11, color: C.textMut }}>{formatDate(s.created_at)}</div>
                         </div>
-                        <a
-                          href={`/report/${s.id}`} target="_blank" rel="noreferrer"
-                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: C.panel, border: `1px solid ${C.border}`, borderRadius: 7, color: C.textSec, fontSize: 12, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif" }}
-                        >
-                          Ver reporte <ExternalLink size={11} />
-                        </a>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <a
+                            href={`/report/${s.id}`} target="_blank" rel="noreferrer"
+                            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: C.panel, border: `1px solid ${C.border}`, borderRadius: 7, color: C.textSec, fontSize: 12, textDecoration: 'none', fontFamily: "'DM Sans', sans-serif" }}
+                          >
+                            Ver reporte <ExternalLink size={11} />
+                          </a>
+                          <button
+                            onClick={() => handleExportPDF(s.id)}
+                            disabled={exportingSessionId === s.id}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 5,
+                              padding: '6px 12px', background: exportingSessionId === s.id ? C.border : C.panel,
+                              border: `1px solid ${C.border}`, borderRadius: 7,
+                              color: exportingSessionId === s.id ? C.textMut : C.textSec,
+                              fontSize: 12, fontFamily: "'DM Sans', sans-serif",
+                              cursor: exportingSessionId === s.id ? 'not-allowed' : 'pointer',
+                              transition: 'all 0.15s',
+                            }}
+                            onMouseEnter={e => { if (exportingSessionId !== s.id) (e.currentTarget as HTMLElement).style.background = C.blue + '10'; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = C.panel; }}
+                          >
+                            <FileDown size={11} /> {exportingSessionId === s.id ? '...' : 'PDF'}
+                          </button>
+                        </div>
                       </div>
 
                       {/* Comentarios */}
