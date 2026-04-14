@@ -27,25 +27,26 @@ interface ExercisePriority {
   nombre?: string;
   golpe_objetivo?: string;
   dimension_objetivo?: string;
-  descripcion?: string;
+  descripcion_detallada?: string;    // Campo real en Supabase
   series?: number;
   repeticiones?: number;
-  duracion_segundos?: number;
-  punto_clave?: string;
-  error_comun?: string;
+  duracion_minutos?: number;         // Campo real en Supabase
+  punto_atencion_clave?: string;     // Campo real en Supabase
+  error_comun_evitar?: string;       // Campo real en Supabase
   metrica_exito?: string;
+  prioridad?: number;
 }
 
 interface PlanEjercicios {
-  mensaje?: string;
-  proximaFoco?: string;
+  mensaje_motivacional?: string;     // Campo real en Supabase
+  proxima_sesion_foco?: string;      // Campo real en Supabase
   ejercicios_prioritarios?: ExercisePriority[];
 }
 
 interface QualityScore {
-  overall_quality_score?: number;
-  mediapipe_coverage?: number;
-  ball_sync_rate?: number;
+  overall_quality_score?: number;    // Fracción 0-1
+  mediapipe_coverage?: number;       // Porcentaje 0-100
+  ball_sync_rate?: number;           // Porcentaje 0-100
 }
 
 interface SynthesizerMetadata {
@@ -68,8 +69,6 @@ export interface SessionForPDF {
   quality_score?: QualityScore;
   actual_session_date?: string;
   created_at: string;
-  duration?: string;
-  camera_quality?: string;
   synthesizer_metadata?: SynthesizerMetadata;
   [key: string]: any;
 }
@@ -88,8 +87,14 @@ const scoreColor = (score: number): string => {
   return C.red;
 };
 
-const getDimensionScore = (scores: Record<string, any>, dimension: string): number => {
-  return scores?.[dimension]?.score ?? 0;
+// Escapa texto para insertar de forma segura en HTML
+const escapeHtml = (text: string | null | undefined): string => {
+  if (!text) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 };
 
 export const generateSessionPDF = async (
@@ -98,13 +103,18 @@ export const generateSessionPDF = async (
   profesorName: string = 'TennisAI Coach'
 ): Promise<void> => {
   const scores = session.scores_detalle || {};
-  const planEjercicios = Array.isArray(session.plan_ejercicios) ? {} : (session.plan_ejercicios || {});
+  // BUG FIX: plan_ejercicios puede ser array legacy o el objeto actual
+  const planEjercicios: PlanEjercicios = Array.isArray(session.plan_ejercicios)
+    ? {}
+    : (session.plan_ejercicios || {});
   const quality = session.quality_score || {};
   const metadata = session.synthesizer_metadata || {};
 
   const date = new Date(session.actual_session_date || session.created_at);
   const dateStr = date.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
   const timeStr = new Date().toLocaleTimeString('es-ES');
+
+  const studentName = `${escapeHtml(studentProfile.first_name)} ${escapeHtml(studentProfile.last_name)}`.trim();
 
   // Create HTML content
   const htmlContent = `
@@ -115,7 +125,7 @@ export const generateSessionPDF = async (
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-          font-family: 'DM Sans', Arial, sans-serif;
+          font-family: Arial, sans-serif;
           color: #0f1923;
           background: white;
           padding: 40px;
@@ -230,7 +240,8 @@ export const generateSessionPDF = async (
           color: #0f1923;
           font-size: 10px;
         }
-        .quality-warning {
+        /* BUG FIX: nombre único para el banner de advertencia de calidad */
+        .quality-low-banner {
           padding: 8px;
           background: #fee;
           border-left: 4px solid #dc2626;
@@ -239,16 +250,19 @@ export const generateSessionPDF = async (
           font-size: 10px;
           color: #991b1b;
         }
-        .quality-item {
+        .quality-row {
+          margin-bottom: 8px;
+        }
+        .quality-row-item {
           display: inline-block;
           margin-right: 16px;
           font-size: 10px;
         }
-        .quality-label {
+        .quality-row-label {
           color: #4a5568;
           font-weight: 600;
         }
-        .quality-value {
+        .quality-row-value {
           color: #0f1923;
           font-weight: 700;
         }
@@ -269,7 +283,7 @@ export const generateSessionPDF = async (
           font-size: 10px;
           color: #0f1923;
         }
-        .root-cause {
+        .root-cause-box {
           padding: 10px;
           background: #fee;
           border-left: 3px solid #dc2626;
@@ -304,9 +318,6 @@ export const generateSessionPDF = async (
           color: #8896a5;
           text-align: center;
         }
-        .quality-good { color: #16a34a; }
-        .quality-warning { color: #d97706; }
-        .quality-poor { color: #dc2626; }
       </style>
     </head>
     <body>
@@ -321,23 +332,23 @@ export const generateSessionPDF = async (
         <div class="info-grid">
           <div class="info-item">
             <div class="info-label">Estudiante</div>
-            <div class="info-value">${studentProfile.first_name || ''} ${studentProfile.last_name || ''}</div>
+            <div class="info-value">${studentName || escapeHtml(studentProfile.email)}</div>
           </div>
           <div class="info-item">
             <div class="info-label">Profesor</div>
-            <div class="info-value">${profesorName}</div>
+            <div class="info-value">${escapeHtml(profesorName)}</div>
           </div>
           <div class="info-item">
             <div class="info-label">Fecha</div>
-            <div class="info-value">${dateStr}</div>
+            <div class="info-value">${escapeHtml(dateStr)}</div>
           </div>
           <div class="info-item">
             <div class="info-label">Tipo de Sesión</div>
-            <div class="info-value">${session.session_type || '—'}</div>
+            <div class="info-value">${escapeHtml(session.session_type) || '—'}</div>
           </div>
           <div class="info-item">
             <div class="info-label">Nivel</div>
-            <div class="info-value">${session.nivel_general || '—'}</div>
+            <div class="info-value">${escapeHtml(session.nivel_general) || '—'}</div>
           </div>
           <div class="info-item">
             <div class="info-label">Puntuación Global</div>
@@ -355,18 +366,25 @@ export const generateSessionPDF = async (
         <div class="section">
           <div class="section-title">Métricas de Calidad</div>
           ${quality.overall_quality_score < 0.55 ? `
-            <div class="quality-warning">
+            <div class="quality-low-banner">
               ⚠️ Calidad de sesión baja. Los resultados pueden no ser representativos.
             </div>
           ` : ''}
-          <div>
-            <div class="quality-item">
-              <span class="quality-label">Cobertura de Pose:</span>
-              <span class="quality-value">${Math.round((quality.mediapipe_coverage || 0) * 100)}%</span>
+          <div class="quality-row">
+            <div class="quality-row-item">
+              <span class="quality-row-label">Calidad General: </span>
+              <!-- BUG FIX: overall_quality_score es fracción 0-1, sí necesita *100 -->
+              <span class="quality-row-value">${Math.round((quality.overall_quality_score || 0) * 100)}%</span>
             </div>
-            <div class="quality-item">
-              <span class="quality-label">Sincronización de Pelota:</span>
-              <span class="quality-value">${Math.round((quality.ball_sync_rate || 0) * 100)}%</span>
+            <div class="quality-row-item">
+              <span class="quality-row-label">Cobertura de Pose: </span>
+              <!-- BUG FIX: mediapipe_coverage ya es porcentaje 0-100, NO multiplicar -->
+              <span class="quality-row-value">${Math.round(quality.mediapipe_coverage || 0)}%</span>
+            </div>
+            <div class="quality-row-item">
+              <span class="quality-row-label">Sincronización de Pelota: </span>
+              <!-- BUG FIX: ball_sync_rate ya es porcentaje 0-100, NO multiplicar -->
+              <span class="quality-row-value">${Math.round(quality.ball_sync_rate || 0)}%</span>
             </div>
           </div>
         </div>
@@ -379,7 +397,7 @@ export const generateSessionPDF = async (
         ${Object.entries(scores).map(([stroke, scoreData]: [string, any]) => {
           if (!['forehand', 'backhand', 'saque'].includes(stroke)) return '';
           const data = scoreData as ScoreDetail;
-          const strokeLabel = stroke.charAt(0).toUpperCase() + stroke.slice(1);
+          const strokeLabel = stroke === 'forehand' ? 'Forehand' : stroke === 'backhand' ? 'Backhand' : 'Saque';
 
           return `
             <div class="stroke-section">
@@ -388,13 +406,13 @@ export const generateSessionPDF = async (
                 <span class="score-badge" style="background-color: ${scoreColor(data.total || 0)};">
                   ${data.total || 0}/100
                 </span>
-                ${data.nivel ? ` • ${data.nivel}` : ''}
+                ${data.nivel ? ` • ${escapeHtml(data.nivel)}` : ''}
               </div>
 
               <div class="dimension-grid">
                 ${getDimensionData(stroke, data).map(d => `
                   <div class="dimension-item">
-                    <div class="dimension-name">${d.name}</div>
+                    <div class="dimension-name">${escapeHtml(d.name)}</div>
                     <div class="dimension-score">${d.score}/20</div>
                   </div>
                 `).join('')}
@@ -403,14 +421,14 @@ export const generateSessionPDF = async (
               ${data.analisis_tecnico?.fortalezas?.length ? `
                 <div class="strengths">
                   <div class="strengths-label">FORTALEZAS</div>
-                  <div class="strengths-text">${(data.analisis_tecnico.fortalezas || []).slice(0, 2).join('; ')}</div>
+                  <div class="strengths-text">${data.analisis_tecnico.fortalezas.slice(0, 2).map(escapeHtml).join('; ')}</div>
                 </div>
               ` : ''}
 
               ${data.analisis_tecnico?.patron_error_principal ? `
                 <div class="error-pattern">
                   <div class="error-label">PATRÓN DE ERROR PRINCIPAL</div>
-                  <div class="error-text">${data.analisis_tecnico.patron_error_principal}</div>
+                  <div class="error-text">${escapeHtml(data.analisis_tecnico.patron_error_principal)}</div>
                 </div>
               ` : ''}
             </div>
@@ -422,15 +440,15 @@ export const generateSessionPDF = async (
       ${metadata.root_cause ? `
         <div class="section">
           <div class="section-title">Análisis de IA</div>
-          <div class="root-cause">
+          <div class="root-cause-box">
             <strong>Problema Detectado:</strong><br>
-            ${metadata.root_cause}
+            ${escapeHtml(metadata.root_cause)}
           </div>
           ${metadata.top_3_insights?.length ? `
             <div style="margin-bottom: 8px;">
               <strong style="font-size: 10px; color: #4a5568;">Top 3 Insights</strong>
               ${metadata.top_3_insights.slice(0, 3).map(insight => `
-                <div class="insight-item">• ${insight}</div>
+                <div class="insight-item">• ${escapeHtml(insight)}</div>
               `).join('')}
             </div>
           ` : ''}
@@ -441,7 +459,7 @@ export const generateSessionPDF = async (
       ${session.diagnostico_global ? `
         <div class="section">
           <div class="section-title">Diagnóstico de la Sesión</div>
-          <div class="diagnostics-text">${session.diagnostico_global}</div>
+          <div class="diagnostics-text">${escapeHtml(session.diagnostico_global)}</div>
         </div>
       ` : ''}
 
@@ -453,29 +471,31 @@ export const generateSessionPDF = async (
         <div class="section">
           <div class="section-title">Plan de Ejercicios</div>
 
-          ${planEjercicios.mensaje ? `
+          ${planEjercicios.mensaje_motivacional ? `
             <div style="padding: 12px; background: #f7f8fa; border-radius: 4px; margin-bottom: 12px; font-size: 11px; color: #0f1923;">
-              <strong>Motivación:</strong> ${planEjercicios.mensaje}
+              <strong>Motivación:</strong> ${escapeHtml(planEjercicios.mensaje_motivacional)}
             </div>
           ` : ''}
 
-          ${planEjercicios.proximaFoco ? `
+          ${planEjercicios.proxima_sesion_foco ? `
             <div style="padding: 12px; background: #f0fdf4; border-left: 3px solid #16a34a; border-radius: 4px; margin-bottom: 12px; font-size: 11px; color: #0f1923;">
-              <strong>Próxima Sesión Focus:</strong> ${planEjercicios.proximaFoco}
+              <strong>Próxima Sesión — Foco:</strong> ${escapeHtml(planEjercicios.proxima_sesion_foco)}
             </div>
           ` : ''}
 
           ${planEjercicios.ejercicios_prioritarios?.length ? `
             <div>
               <strong style="font-size: 11px; color: #4a5568; margin-bottom: 8px; display: block;">Ejercicios Prioritarios</strong>
-              ${planEjercicios.ejercicios_prioritarios.slice(0, 5).map((ex: any) => `
+              ${planEjercicios.ejercicios_prioritarios.slice(0, 5).map((ex: ExercisePriority) => `
                 <div class="exercise-item">
-                  <div class="exercise-name">${ex.nombre || 'Ejercicio'}</div>
-                  ${ex.golpe_objetivo ? `<div class="exercise-detail"><strong>Golpe:</strong> ${ex.golpe_objetivo}</div>` : ''}
-                  ${ex.dimension_objetivo ? `<div class="exercise-detail"><strong>Dimensión:</strong> ${ex.dimension_objetivo}</div>` : ''}
-                  ${ex.descripcion ? `<div class="exercise-detail"><strong>Descripción:</strong> ${ex.descripcion}</div>` : ''}
-                  ${ex.series || ex.repeticiones ? `<div class="exercise-detail"><strong>Duración:</strong> ${ex.series || ''} ${ex.series ? 'series' : ''} ${ex.repeticiones || ''} ${ex.repeticiones ? 'repeticiones' : ''}</div>` : ''}
-                  ${ex.metrica_exito ? `<div class="exercise-detail"><strong>Métrica de Éxito:</strong> ${ex.metrica_exito}</div>` : ''}
+                  <div class="exercise-name">${escapeHtml(ex.nombre) || 'Ejercicio'}</div>
+                  ${ex.golpe_objetivo ? `<div class="exercise-detail"><strong>Golpe:</strong> ${escapeHtml(ex.golpe_objetivo)}</div>` : ''}
+                  ${ex.dimension_objetivo ? `<div class="exercise-detail"><strong>Dimensión:</strong> ${escapeHtml(ex.dimension_objetivo)}</div>` : ''}
+                  ${ex.descripcion_detallada ? `<div class="exercise-detail"><strong>Descripción:</strong> ${escapeHtml(ex.descripcion_detallada)}</div>` : ''}
+                  ${ex.series || ex.repeticiones || ex.duracion_minutos ? `<div class="exercise-detail"><strong>Duración:</strong> ${ex.series ? `${ex.series} series` : ''} ${ex.repeticiones ? `· ${ex.repeticiones} reps` : ''} ${ex.duracion_minutos ? `· ${ex.duracion_minutos} min` : ''}</div>` : ''}
+                  ${ex.punto_atencion_clave ? `<div class="exercise-detail" style="color: #16a34a;"><strong>Atención clave:</strong> ${escapeHtml(ex.punto_atencion_clave)}</div>` : ''}
+                  ${ex.error_comun_evitar ? `<div class="exercise-detail" style="color: #dc2626;"><strong>Error a evitar:</strong> ${escapeHtml(ex.error_comun_evitar)}</div>` : ''}
+                  ${ex.metrica_exito ? `<div class="exercise-detail"><strong>Métrica de éxito:</strong> ${escapeHtml(ex.metrica_exito)}</div>` : ''}
                 </div>
               `).join('')}
             </div>
@@ -485,19 +505,17 @@ export const generateSessionPDF = async (
 
       <!-- FOOTER -->
       <div class="footer">
-        <p>Reporte generado el ${dateStr} a las ${timeStr}</p>
+        <p>Reporte generado el ${escapeHtml(dateStr)} a las ${escapeHtml(timeStr)}</p>
         <p style="margin-top: 4px;">© TennisAI - Powered by AI-Driven Performance Analytics</p>
       </div>
     </body>
     </html>
   `;
 
-  // Create temporary container
+  // Create temporary off-screen container
   const container = document.createElement('div');
   container.innerHTML = htmlContent;
-  container.style.position = 'absolute';
-  container.style.left = '-9999px';
-  container.style.width = '210mm'; // A4 width
+  container.style.cssText = 'position: absolute; left: -9999px; top: 0; width: 794px;'; // 794px ≈ A4 @96dpi
   document.body.appendChild(container);
 
   try {
@@ -507,6 +525,7 @@ export const generateSessionPDF = async (
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
+      width: 794,
     });
 
     // Create PDF
@@ -516,71 +535,62 @@ export const generateSessionPDF = async (
       format: 'a4',
     });
 
-    const imgWidth = 210; // A4 width in mm
+    const imgWidth = 210; // A4 width mm
+    const pageHeight = 297; // A4 height mm
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    let heightLeft = imgHeight;
-    let position = 0;
 
-    // Add image to PDF, handling multiple pages
-    const imgData = canvas.toDataURL('image/png');
-    while (heightLeft >= 0) {
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= 297; // A4 height in mm
-      if (heightLeft > 0) {
-        pdf.addPage();
-        position = heightLeft - imgHeight;
-      }
+    // BUG FIX: paginación correcta — desplazar la imagen hacia arriba en cada página
+    let position = 0;
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+    let heightLeft = imgHeight - pageHeight;
+
+    while (heightLeft > 0) {
+      position -= pageHeight;
+      pdf.addPage();
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
     }
 
-    // Generate filename
-    const studentName = `${studentProfile.first_name || ''} ${studentProfile.last_name || ''}`.trim().replace(/[^a-zA-Z0-9]/g, '_');
-    const sessionDate = new Date(session.actual_session_date || session.created_at).toISOString().split('T')[0];
-    const filename = `${studentName}_${sessionDate}_${session.session_type}_report.pdf`;
+    // Generate filename (safe characters only)
+    const safeName = `${studentProfile.first_name || ''} ${studentProfile.last_name || ''}`
+      .trim()
+      .replace(/[^a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ\s]/g, '')
+      .replace(/\s+/g, '_');
+    const sessionDate = new Date(session.actual_session_date || session.created_at)
+      .toISOString()
+      .split('T')[0];
+    const filename = `${safeName}_${sessionDate}_${session.session_type}_report.pdf`;
 
-    // Download
     pdf.save(filename);
   } finally {
     document.body.removeChild(container);
   }
 };
 
-// Helper function to get dimension scores
+// Helper: get dimension scores for a stroke
 function getDimensionData(stroke: string, data: ScoreDetail): Array<{ name: string; score: number }> {
   const scores = data.scores || {};
-  const dimensions = [
-    'preparacion',
-    'punto_impacto',
-    'follow_through',
-    'posicion_pies',
-    'ritmo_cadencia',
-    'potencia_pelota',
-  ];
 
-  // For saque, use preparacion_toss and carga_trophy instead
-  if (stroke === 'saque') {
-    const saqueDimensions = ['preparacion_toss', 'carga_trophy', 'punto_impacto', 'follow_through', 'ritmo_cadencia', 'potencia_pelota'];
-    return saqueDimensions.map(dim => ({
-      name: getDimensionName(dim),
-      score: scores?.[dim]?.score || 0,
-    }));
-  }
+  const dimensions = stroke === 'saque'
+    ? ['preparacion_toss', 'carga_trophy', 'punto_impacto', 'follow_through', 'ritmo_cadencia', 'potencia_pelota']
+    : ['preparacion', 'punto_impacto', 'follow_through', 'posicion_pies', 'ritmo_cadencia', 'potencia_pelota'];
 
   return dimensions.map(dim => ({
-    name: getDimensionName(dim),
+    name: getDimensionLabel(dim),
     score: scores?.[dim]?.score || 0,
   }));
 }
 
-function getDimensionName(dimension: string): string {
-  const names: Record<string, string> = {
-    preparacion: 'Prep',
-    preparacion_toss: 'Prep Toss',
-    carga_trophy: 'Trophy',
-    punto_impacto: 'Impacto',
-    follow_through: 'Follow',
-    posicion_pies: 'Pies',
-    ritmo_cadencia: 'Ritmo',
-    potencia_pelota: 'Potencia',
+function getDimensionLabel(dimension: string): string {
+  const labels: Record<string, string> = {
+    preparacion:       'Preparación',
+    preparacion_toss:  'Prep Toss',
+    carga_trophy:      'Trophy',
+    punto_impacto:     'Impacto',
+    follow_through:    'Follow-through',
+    posicion_pies:     'Posición Pies',
+    ritmo_cadencia:    'Ritmo',
+    potencia_pelota:   'Potencia',
   };
-  return names[dimension] || dimension;
+  return labels[dimension] || dimension;
 }
