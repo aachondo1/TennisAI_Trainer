@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { C } from '../lib/theme';
 import { Users, Plus, AlertCircle, ChevronRight, Clock } from 'lucide-react';
+import { RankingsTable, type RankingRow } from '../components/RankingsTable';
+import { RegressionAlerts, type RegressionAlert } from '../components/RegressionAlerts';
 
 const fonts = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
@@ -31,6 +33,11 @@ type ActivityItem = {
   created_at: string;
 };
 
+type SortConfig = {
+  key: keyof RankingRow;
+  direction: 'asc' | 'desc';
+};
+
 const scoreColor = (s: number) => {
   if (s >= 80) return C.accentDark;
   if (s >= 65) return C.blue;
@@ -56,16 +63,100 @@ const timeAgo = (iso: string) => {
 
 const initials = (name: string) => name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 
+// Helper functions for rankings and alerts
+const calculateDaysSince = (dateStr: string | null): number => {
+  if (!dateStr) return Infinity;
+  const date = new Date(dateStr);
+  const now = new Date();
+  return Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+};
+
+const getSessionsInLast30Days = (sessions: any[]): number => {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  return sessions.filter(s => new Date(s.created_at) > thirtyDaysAgo).length;
+};
+
+const calculateRankingData = (alumno: Alumno, sessions: any[]): RankingRow => {
+  const sorted = [...sessions].sort((a, b) =>
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
+  const avgScore = sessions.length > 0
+    ? Math.round(sessions.reduce((sum, s) => sum + s.global_score, 0) / sessions.length * 10) / 10
+    : 0;
+
+  const lastScore = sorted[0]?.global_score ?? null;
+  const secondLastScore = sorted[1]?.global_score ?? null;
+  const delta = lastScore !== null && secondLastScore !== null
+    ? Math.round((lastScore - secondLastScore) * 10) / 10
+    : null;
+
+  return {
+    id: alumno.id,
+    first_name: alumno.first_name,
+    last_name: alumno.last_name,
+    avgScore,
+    lastSessionScore: lastScore,
+    secondLastScore,
+    delta,
+    sessionsLast30Days: getSessionsInLast30Days(sessions),
+    lastSessionDate: sorted[0]?.created_at ?? null,
+    daysSinceLastSession: calculateDaysSince(sorted[0]?.created_at ?? null),
+  };
+};
+
+const calculateRegressionAlerts = (alumno: Alumno, sessions: any[]): RegressionAlert | null => {
+  const sorted = [...sessions].sort((a, b) =>
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
+  const lastScore = sorted[0]?.global_score ?? null;
+  const secondLastScore = sorted[1]?.global_score ?? null;
+  const lastSessionDate = sorted[0]?.created_at ?? null;
+  const daysSinceLastSession = calculateDaysSince(lastSessionDate);
+
+  // Alert: drop >5 puntos
+  if (lastScore !== null && secondLastScore !== null && secondLastScore - lastScore > 5) {
+    return {
+      alumnoId: alumno.id,
+      firstName: alumno.first_name,
+      lastName: alumno.last_name,
+      type: 'drop',
+      severity: 'high',
+      lastScore,
+      previousScore: secondLastScore,
+    };
+  }
+
+  // Alert: inactivo >14 días
+  if (daysSinceLastSession > 14 && sessions.length > 0) {
+    return {
+      alumnoId: alumno.id,
+      firstName: alumno.first_name,
+      lastName: alumno.last_name,
+      type: 'inactive',
+      severity: 'medium',
+      daysSinceLastSession,
+    };
+  }
+
+  return null;
+};
+
 export function Profesor() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [alumnos, setAlumnos]       = useState<Alumno[]>([]);
   const [activity, setActivity]     = useState<ActivityItem[]>([]);
+  const [rankingData, setRankingData] = useState<RankingRow[]>([]);
+  const [regressionAlerts, setRegressionAlerts] = useState<RegressionAlert[]>([]);
   const [loadingAlumnos, setLoadingAlumnos] = useState(true);
   const [loadingActivity, setLoadingActivity] = useState(true);
   const [emailInput, setEmailInput] = useState('');
   const [addError, setAddError]     = useState('');
   const [adding, setAdding]         = useState(false);
+  const [activeTab, setActiveTab]   = useState<'general' | 'rankings'>('general');
 
   useEffect(() => {
     if (user) {
@@ -82,7 +173,13 @@ export function Profesor() {
       .select('alumno_id')
       .eq('profesor_id', user.id);
 
-    if (!links || links.length === 0) { setAlumnos([]); setLoadingAlumnos(false); return; }
+    if (!links || links.length === 0) {
+      setAlumnos([]);
+      setRankingData([]);
+      setRegressionAlerts([]);
+      setLoadingAlumnos(false);
+      return;
+    }
 
     const ids = links.map((l: any) => l.alumno_id);
     const { data: profiles } = await supabase
@@ -90,6 +187,7 @@ export function Profesor() {
       .select('id, email, first_name, last_name')
       .in('id', ids);
 
+    // Get ALL sessions (no limit) for comprehensive ranking calculations
     const { data: sessionData } = await supabase
       .from('sessions')
       .select('user_id, global_score, created_at')
@@ -99,6 +197,7 @@ export function Profesor() {
     const countMap: Record<string, number>    = {};
     const scoreMap: Record<string, number[]>  = {};
     const lastMap:  Record<string, string>    = {};
+    const sessionMap: Record<string, any[]>   = {};
 
     (sessionData ?? []).forEach((s: any) => {
       countMap[s.user_id] = (countMap[s.user_id] ?? 0) + 1;
@@ -107,9 +206,13 @@ export function Profesor() {
         scoreMap[s.user_id].push(s.global_score);
       }
       if (!lastMap[s.user_id]) lastMap[s.user_id] = s.created_at;
+
+      // Store all sessions for ranking calculations
+      if (!sessionMap[s.user_id]) sessionMap[s.user_id] = [];
+      sessionMap[s.user_id].push(s);
     });
 
-    setAlumnos((profiles ?? []).map((p: any) => ({
+    const alumnosData = (profiles ?? []).map((p: any) => ({
       id:            p.id,
       email:         p.email ?? '',
       first_name:    p.first_name ?? '',
@@ -119,7 +222,28 @@ export function Profesor() {
         ? Math.round(scoreMap[p.id].reduce((a, b) => a + b, 0) / scoreMap[p.id].length)
         : 0,
       last_session: lastMap[p.id] ?? null,
-    })));
+    }));
+
+    setAlumnos(alumnosData);
+
+    // Calculate rankings and alerts
+    const rankingRows: RankingRow[] = [];
+    const alerts: RegressionAlert[] = [];
+
+    alumnosData.forEach((alumno) => {
+      const alumnoSessions = sessionMap[alumno.id] ?? [];
+
+      if (alumnoSessions.length > 0) {
+        const ranking = calculateRankingData(alumno, alumnoSessions);
+        rankingRows.push(ranking);
+
+        const alert = calculateRegressionAlerts(alumno, alumnoSessions);
+        if (alert) alerts.push(alert);
+      }
+    });
+
+    setRankingData(rankingRows);
+    setRegressionAlerts(alerts);
     setLoadingAlumnos(false);
   };
 
@@ -228,6 +352,48 @@ export function Profesor() {
             <div style={{ fontSize: 14, color: C.textSec, marginTop: 4 }}>Gestiona tu lista de alumnos y sigue su progreso técnico</div>
           </div>
 
+          {/* Tabs */}
+          <div style={{ display: 'flex', gap: 12, marginBottom: 28, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
+            <button
+              onClick={() => setActiveTab('general')}
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: activeTab === 'general' ? C.accent : C.textMut,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '0 4px',
+                paddingBottom: 8,
+                borderBottom: activeTab === 'general' ? `2px solid ${C.accent}` : 'none',
+                transition: 'all 0.15s',
+                fontFamily: "'Syne', sans-serif",
+              }}
+            >
+              Vista General
+            </button>
+            <button
+              onClick={() => setActiveTab('rankings')}
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: activeTab === 'rankings' ? C.accent : C.textMut,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '0 4px',
+                paddingBottom: 8,
+                borderBottom: activeTab === 'rankings' ? `2px solid ${C.accent}` : 'none',
+                transition: 'all 0.15s',
+                fontFamily: "'Syne', sans-serif",
+              }}
+            >
+              Rankings
+            </button>
+          </div>
+
+          {/* Vista General */}
+          {activeTab === 'general' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 28, alignItems: 'start' }}>
 
             {/* Columna izquierda — Lista de alumnos */}
@@ -390,6 +556,34 @@ export function Profesor() {
             </div>
 
           </div>
+          )}
+
+          {/* Vista Rankings */}
+          {activeTab === 'rankings' && (
+          <div>
+            <RegressionAlerts
+              alerts={regressionAlerts}
+              onAlumnoClick={(alumnoId) => navigate(`/profesor/alumno/${alumnoId}`)}
+            />
+
+            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: C.textPri, marginBottom: 16, fontFamily: "'Syne', sans-serif" }}>
+                Tabla de Rankings
+              </h3>
+              {loadingAlumnos ? (
+                <div style={{ padding: '32px', textAlign: 'center', color: C.textMut }}>
+                  Cargando datos...
+                </div>
+              ) : (
+                <RankingsTable
+                  data={rankingData}
+                  onRowClick={(alumnoId) => navigate(`/profesor/alumno/${alumnoId}`)}
+                />
+              )}
+            </div>
+          </div>
+          )}
+
         </main>
       </div>
     </>
