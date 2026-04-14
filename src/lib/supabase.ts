@@ -64,8 +64,8 @@ export type Profile = {
   first_name: string | null;
   last_name: string | null;
   role: 'user' | 'profesor' | 'admin';
-  nivel_general: 'principiante' | 'intermedio' | 'avanzado' | 'experto';
-  dominant_hand: 'right' | 'left' | 'ambidextrous' | null;
+  nivel_general: 'principiante' | 'intermedio' | 'avanzado' | 'experto' | null;
+  dominant_hand: 'right' | 'left' | null;
   equipment_bag: Racket[] | null;
   created_at: string;
   updated_at: string;

@@ -981,8 +981,8 @@ export default function Dashboard() {
                   <div style={{ display:'flex', flexDirection:'column', gap:12, marginTop:4 }}>
                     {Object.entries(stats!.typeDist).map(([type, count]) => {
                       const pct = Math.round((count/sessions.length)*100);
-                      const colors: Record<string,string> = { forehand:C.blue, backhand:C.red, saque:C.green, mezcla:C.accent };
-                      const labels: Record<string,string> = { forehand:'Forehand', backhand:'Backhand', saque:'Saque', mezcla:'Mezcla' };
+                      const colors: Record<string,string> = { clase:C.blue, paleteo:C.accent, partido:C.green };
+                      const labels: Record<string,string> = { clase:'Clase', paleteo:'Paleteo', partido:'Partido' };
                       const color = colors[type] || C.textSec;
                       return (
                         <div key={type}>
