@@ -29,11 +29,25 @@ export type ExercisePlan = {
   ejercicios: string[];
 };
 
+export type ScoreDetail = {
+  total?: number;
+  nivel?: string;
+  scores?: Record<string, { score: number }>;
+  analisis_tecnico?: {
+    fortalezas?: string[];
+    debilidades?: string[];
+    patron_error_principal?: string;
+  };
+  metricas_clave?: {
+    velocidad_pelota_max?: number;
+  };
+};
+
 export type ScoresDetalle = {
-  forehand?: number;
-  backhand?: number;
-  saque?: number;
-  [key: string]: number | undefined;
+  forehand?: ScoreDetail;
+  backhand?: ScoreDetail;
+  saque?: ScoreDetail;
+  [key: string]: ScoreDetail | undefined;
 };
 
 export type Racket = {
@@ -49,8 +63,10 @@ export type Profile = {
   email: string;
   first_name: string | null;
   last_name: string | null;
-  dominant_hand: 'right' | 'left' | null;
-  equipment_bag: Racket[];
+  role: 'user' | 'profesor' | 'admin';
+  nivel_general: 'principiante' | 'intermedio' | 'avanzado' | 'experto';
+  dominant_hand: 'right' | 'left' | 'ambidextrous' | null;
+  equipment_bag: Racket[] | null;
   created_at: string;
   updated_at: string;
 };
