@@ -435,26 +435,41 @@ export function Report() {
     try {
       setExportingPDF(true);
 
-      // Get current user and profile
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('first_name, last_name')
-        .eq('id', user.id)
-        .single();
+      const isOwnSession = user.id === session.user_id;
 
-      // Get student profile
-      const { data: studentData } = await supabase
-        .from('profiles')
-        .select('id, email, first_name, last_name')
-        .eq('id', session.user_id)
-        .single();
+      // Student profile — if viewing own session, use own profile; otherwise fetch
+      let studentData;
+      if (isOwnSession) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('id, email, first_name, last_name')
+          .eq('id', user.id)
+          .single();
+        studentData = data;
+      } else {
+        const { data } = await supabase
+          .from('profiles')
+          .select('id, email, first_name, last_name')
+          .eq('id', session.user_id)
+          .single();
+        studentData = data;
+      }
 
-      const profesorName = [profileData?.first_name, profileData?.last_name]
-        .filter(Boolean)
-        .join(' ') || 'TennisAI Coach';
+      // Profesor name — only resolve if current user is NOT the student
+      let profesorName = 'TennisAI Coach';
+      if (!isOwnSession) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', user.id)
+          .single();
+        profesorName = [profileData?.first_name, profileData?.last_name]
+          .filter(Boolean)
+          .join(' ') || 'TennisAI Coach';
+      }
 
       if (studentData) {
         await generateSessionPDF(session, studentData, profesorName);

@@ -132,7 +132,6 @@ export const generateSessionPDF = async (
           font-size: 11px;
           line-height: 1.5;
         }
-        .page-break { page-break-after: always; }
         .header {
           border-bottom: 3px solid #4a7a00;
           padding-bottom: 20px;
@@ -447,8 +446,12 @@ export const generateSessionPDF = async (
           ${metadata.top_3_insights?.length ? `
             <div style="margin-bottom: 8px;">
               <strong style="font-size: 10px; color: #4a5568;">Top 3 Insights</strong>
-              ${metadata.top_3_insights.slice(0, 3).map(insight => `
-                <div class="insight-item">• ${escapeHtml(insight)}</div>
+              ${metadata.top_3_insights.slice(0, 3).map((insight: any) => `
+                <div class="insight-item">
+                  <strong>${escapeHtml(insight.area || 'Insight')}${insight.impacto ? ` (${escapeHtml(insight.impacto)})` : ''}:</strong>
+                  ${escapeHtml(insight.descripcion || '')}
+                  ${insight.accionabilidad ? `<br><em style="color: #16a34a;">Acción: ${escapeHtml(insight.accionabilidad)}</em>` : ''}
+                </div>
               `).join('')}
             </div>
           ` : ''}
@@ -462,9 +465,6 @@ export const generateSessionPDF = async (
           <div class="diagnostics-text">${escapeHtml(session.diagnostico_global)}</div>
         </div>
       ` : ''}
-
-      <!-- PAGE BREAK FOR EXERCISES -->
-      <div class="page-break"></div>
 
       <!-- EXERCISE PLAN -->
       ${planEjercicios && typeof planEjercicios === 'object' && !Array.isArray(planEjercicios) ? `
@@ -539,15 +539,17 @@ export const generateSessionPDF = async (
     const pageHeight = 297; // A4 height mm
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    // BUG FIX: paginación correcta — desplazar la imagen hacia arriba en cada página
+    // Encode canvas once — toDataURL is expensive on high-res canvases
+    const imgData = canvas.toDataURL('image/png');
+
     let position = 0;
-    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
     let heightLeft = imgHeight - pageHeight;
 
     while (heightLeft > 0) {
       position -= pageHeight;
       pdf.addPage();
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
     }
 
