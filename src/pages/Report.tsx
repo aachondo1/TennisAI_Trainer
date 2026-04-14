@@ -7,12 +7,13 @@ import {
 import {
   ChevronDown, TrendingUp, Eye, EyeOff, Info,
   BarChart2, BookOpen, Dumbbell, Target, ArrowLeft, Loader2,
-  Activity, AlertCircle, ArrowUp, ArrowDown, AlertTriangle,
+  Activity, AlertCircle, ArrowUp, ArrowDown, AlertTriangle, Download,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { C, ttStyle } from '../lib/theme';
 import { BoneMappingTab } from '../components/BoneMappingTab';
+import { generateSessionPDF } from '../lib/pdfExport';
 
 const fonts = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
@@ -382,6 +383,7 @@ export function Report() {
   const [visibleLines, setVisibleLines] = useState({ score_global: true, forehand: true, backhand: true, saque: true });
   const [radarStroke, setRadarStroke]   = useState('todos');
   const [profesorComments, setProfesorComments] = useState<ProfesorComment[]>([]);
+  const [exportingPDF, setExportingPDF] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -426,6 +428,58 @@ export function Report() {
     };
     loadData();
   }, [id]);
+
+  const handleExportPDF = async () => {
+    if (!session) return;
+
+    try {
+      setExportingPDF(true);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const isOwnSession = user.id === session.user_id;
+
+      // Student profile — if viewing own session, use own profile; otherwise fetch
+      let studentData;
+      if (isOwnSession) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('id, email, first_name, last_name')
+          .eq('id', user.id)
+          .single();
+        studentData = data;
+      } else {
+        const { data } = await supabase
+          .from('profiles')
+          .select('id, email, first_name, last_name')
+          .eq('id', session.user_id)
+          .single();
+        studentData = data;
+      }
+
+      // Profesor name — only resolve if current user is NOT the student
+      let profesorName = 'TennisAI Coach';
+      if (!isOwnSession) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', user.id)
+          .single();
+        profesorName = [profileData?.first_name, profileData?.last_name]
+          .filter(Boolean)
+          .join(' ') || 'TennisAI Coach';
+      }
+
+      if (studentData) {
+        await generateSessionPDF(session, studentData, profesorName);
+      }
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+    } finally {
+      setExportingPDF(false);
+    }
+  };
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'DM Sans', sans-serif" }}>
@@ -1297,6 +1351,25 @@ export function Report() {
                 <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 18, fontWeight: 500, color: scoreColor(current.globalScore) }}>{current.globalScore}</span>
                 <span style={{ fontSize: 11, color: C.textSec }}>/100</span>
               </div>
+              <button
+                onClick={handleExportPDF}
+                disabled={exportingPDF}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '8px 16px', background: C.panel, border: `1px solid ${C.border}`,
+                  borderRadius: 8, color: C.textSec, fontSize: 13, fontFamily: "'DM Sans', sans-serif",
+                  cursor: exportingPDF ? 'not-allowed' : 'pointer',
+                  opacity: exportingPDF ? 0.6 : 1,
+                  transition: 'all 0.2s',
+                }}
+              >
+                {exportingPDF ? (
+                  <Loader2 size={14} style={{ animation: 'spin 0.8s linear infinite' }} />
+                ) : (
+                  <Download size={14} />
+                )}
+                {exportingPDF ? 'Exportando...' : 'Descargar PDF'}
+              </button>
             </div>
           </div>
         </header>
