@@ -8,6 +8,8 @@ export type RadarDataPoint = {
   session2_forehand: number | null;
   session2_backhand: number | null;
   session2_saque: number | null;
+  session1_avg: number;
+  session2_avg: number;
 };
 
 export type GolpeComparisonData = {
@@ -76,62 +78,41 @@ export const buildRadarDataForComparison = (
     return normalizeScore(dimensionData.score, dimension);
   };
 
-  return [
-    {
-      dimension: 'Preparación',
-      session1_forehand: getDimensionScore(s1, 'forehand', 'preparacion'),
-      session1_backhand: getDimensionScore(s1, 'backhand', 'preparacion'),
-      session1_saque: getDimensionScore(s1, 'saque', 'preparacion_toss'),
-      session2_forehand: getDimensionScore(s2, 'forehand', 'preparacion'),
-      session2_backhand: getDimensionScore(s2, 'backhand', 'preparacion'),
-      session2_saque: getDimensionScore(s2, 'saque', 'preparacion_toss'),
-    },
-    {
-      dimension: 'Impacto',
-      session1_forehand: getDimensionScore(s1, 'forehand', 'punto_impacto'),
-      session1_backhand: getDimensionScore(s1, 'backhand', 'punto_impacto'),
-      session1_saque: getDimensionScore(s1, 'saque', 'punto_impacto'),
-      session2_forehand: getDimensionScore(s2, 'forehand', 'punto_impacto'),
-      session2_backhand: getDimensionScore(s2, 'backhand', 'punto_impacto'),
-      session2_saque: getDimensionScore(s2, 'saque', 'punto_impacto'),
-    },
-    {
-      dimension: 'Follow',
-      session1_forehand: getDimensionScore(s1, 'forehand', 'follow_through'),
-      session1_backhand: getDimensionScore(s1, 'backhand', 'follow_through'),
-      session1_saque: getDimensionScore(s1, 'saque', 'follow_through'),
-      session2_forehand: getDimensionScore(s2, 'forehand', 'follow_through'),
-      session2_backhand: getDimensionScore(s2, 'backhand', 'follow_through'),
-      session2_saque: getDimensionScore(s2, 'saque', 'follow_through'),
-    },
-    {
-      dimension: 'Pies',
-      session1_forehand: getDimensionScore(s1, 'forehand', 'posicion_pies'),
-      session1_backhand: getDimensionScore(s1, 'backhand', 'posicion_pies'),
-      session1_saque: null, // No aplica para saque
-      session2_forehand: getDimensionScore(s2, 'forehand', 'posicion_pies'),
-      session2_backhand: getDimensionScore(s2, 'backhand', 'posicion_pies'),
-      session2_saque: null,
-    },
-    {
-      dimension: 'Ritmo',
-      session1_forehand: getDimensionScore(s1, 'forehand', 'ritmo_cadencia'),
-      session1_backhand: getDimensionScore(s1, 'backhand', 'ritmo_cadencia'),
-      session1_saque: getDimensionScore(s1, 'saque', 'ritmo_cadencia'),
-      session2_forehand: getDimensionScore(s2, 'forehand', 'ritmo_cadencia'),
-      session2_backhand: getDimensionScore(s2, 'backhand', 'ritmo_cadencia'),
-      session2_saque: getDimensionScore(s2, 'saque', 'ritmo_cadencia'),
-    },
-    {
-      dimension: 'Potencia',
-      session1_forehand: getDimensionScore(s1, 'forehand', 'potencia_pelota'),
-      session1_backhand: getDimensionScore(s1, 'backhand', 'potencia_pelota'),
-      session1_saque: getDimensionScore(s1, 'saque', 'potencia_pelota'),
-      session2_forehand: getDimensionScore(s2, 'forehand', 'potencia_pelota'),
-      session2_backhand: getDimensionScore(s2, 'backhand', 'potencia_pelota'),
-      session2_saque: getDimensionScore(s2, 'saque', 'potencia_pelota'),
-    },
+  // Calculates average of non-null scores for a dimension across given fields
+  const avg = (...values: (number | null)[]): number => {
+    const valid = values.filter((v): v is number => v !== null);
+    return valid.length > 0 ? Math.round(valid.reduce((s, v) => s + v, 0) / valid.length) : 0;
+  };
+
+  const rows: Array<{ dimension: string; fhKey: string; bhKey: string; saqueKey: string | null }> = [
+    { dimension: 'Preparación', fhKey: 'preparacion',    bhKey: 'preparacion',    saqueKey: 'preparacion_toss' },
+    { dimension: 'Impacto',     fhKey: 'punto_impacto',  bhKey: 'punto_impacto',  saqueKey: 'punto_impacto' },
+    { dimension: 'Follow',      fhKey: 'follow_through', bhKey: 'follow_through', saqueKey: 'follow_through' },
+    { dimension: 'Pies',        fhKey: 'posicion_pies',  bhKey: 'posicion_pies',  saqueKey: null },
+    { dimension: 'Ritmo',       fhKey: 'ritmo_cadencia', bhKey: 'ritmo_cadencia', saqueKey: 'ritmo_cadencia' },
+    { dimension: 'Potencia',    fhKey: 'potencia_pelota',bhKey: 'potencia_pelota',saqueKey: 'potencia_pelota' },
   ];
+
+  return rows.map(({ dimension, fhKey, bhKey, saqueKey }) => {
+    const s1fh = getDimensionScore(s1, 'forehand', fhKey);
+    const s1bh = getDimensionScore(s1, 'backhand', bhKey);
+    const s1sa = saqueKey ? getDimensionScore(s1, 'saque', saqueKey) : null;
+    const s2fh = getDimensionScore(s2, 'forehand', fhKey);
+    const s2bh = getDimensionScore(s2, 'backhand', bhKey);
+    const s2sa = saqueKey ? getDimensionScore(s2, 'saque', saqueKey) : null;
+
+    return {
+      dimension,
+      session1_forehand: s1fh,
+      session1_backhand: s1bh,
+      session1_saque: s1sa,
+      session2_forehand: s2fh,
+      session2_backhand: s2bh,
+      session2_saque: s2sa,
+      session1_avg: avg(s1fh, s1bh, s1sa),
+      session2_avg: avg(s2fh, s2bh, s2sa),
+    };
+  });
 };
 
 /**
@@ -226,15 +207,21 @@ export const getComparisonSummary = (
     ? (globalDelta / session1.global_score) * 100
     : 0;
 
-  // Find best and worst golpe
+  // Find best and worst golpe — provide initial value to guard against empty array
   const golpeEntries = Object.entries(golpeDeltas);
-  const bestGolpe = golpeEntries.reduce((best, [golpe, data]) =>
-    (data as any).delta > (best[1] as any).delta ? [golpe, data] : best
-  )[0];
+  const bestGolpe = golpeEntries.length > 0
+    ? golpeEntries.reduce((best, cur) =>
+        (cur[1] as any).delta > (best[1] as any).delta ? cur : best,
+        golpeEntries[0]
+      )[0]
+    : 'N/A';
 
-  const worstGolpe = golpeEntries.reduce((worst, [golpe, data]) =>
-    (data as any).delta < (worst[1] as any).delta ? [golpe, data] : worst
-  )[0];
+  const worstGolpe = golpeEntries.length > 0
+    ? golpeEntries.reduce((worst, cur) =>
+        (cur[1] as any).delta < (worst[1] as any).delta ? cur : worst,
+        golpeEntries[0]
+      )[0]
+    : 'N/A';
 
   // Identify improvement/regression areas
   const improvementAreas: string[] = [];

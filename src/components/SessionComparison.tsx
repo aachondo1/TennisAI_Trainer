@@ -6,7 +6,6 @@ import {
   calculateGolpeDeltas,
   calculateDimensionDeltas,
   getComparisonSummary,
-  type RadarDataPoint,
 } from '../lib/comparison';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip, ResponsiveContainer } from 'recharts';
 import { X, ArrowLeft } from 'lucide-react';
@@ -338,7 +337,7 @@ const ComparisonView = ({
     },
     radarContainer: {
       display: 'grid',
-      gridTemplateColumns: '1fr auto 1fr',
+      gridTemplateColumns: '120px 1fr 120px',
       gap: 24,
       alignItems: 'center',
       marginBottom: 32,
@@ -398,13 +397,18 @@ const ComparisonView = ({
     },
   };
 
+  const deltaColor = (delta: number): string => {
+    if (delta > 0) return C.green;
+    if (delta < 0) return C.red;
+    return C.textMut;
+  };
+
   const renderDelta = (delta: number, percentDelta: number) => {
     const sign = delta > 0 ? '+' : '';
-    const isPositive = delta > 0;
 
     return (
       <div>
-        <div style={{ ...styles.delta, ...(isPositive ? styles.deltaPositive : styles.deltaNegative) } as React.CSSProperties}>
+        <div style={{ ...styles.delta, color: deltaColor(delta) } as React.CSSProperties}>
           {sign}{Math.round(delta * 100) / 100}
         </div>
         <div style={{ fontSize: 11, color: C.textMut }}>
@@ -470,39 +474,54 @@ const ComparisonView = ({
                 </div>
               </div>
 
-              <ResponsiveContainer width={300} height={300}>
-                <RadarChart data={radarData}>
-                  <PolarGrid stroke={C.border} />
-                  <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 11, fill: C.textSec }} />
-                  <PolarRadiusAxis stroke="none" tick={false} domain={[0, 20]} />
-                  <Radar
-                    name="Sesión 1"
-                    dataKey="session1_forehand"
-                    stroke={C.blue}
-                    fill={C.blue}
-                    fillOpacity={0.1}
-                    strokeWidth={2}
-                  />
-                  <Radar
-                    name="Sesión 2"
-                    dataKey="session2_forehand"
-                    stroke={C.red}
-                    fill={C.red}
-                    fillOpacity={0.1}
-                    strokeWidth={2}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      background: C.surface,
-                      border: `1px solid ${C.border}`,
-                      borderRadius: 6,
-                      padding: '8px 12px',
-                      fontSize: 12,
-                    }}
-                    formatter={(value: any) => (value !== null ? `${value}/20` : 'N/A')}
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
+              <div style={{ width: '100%', minWidth: 0 }}>
+                <ResponsiveContainer width="100%" height={300}>
+                  <RadarChart data={radarData}>
+                    <PolarGrid stroke={C.border} />
+                    <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 11, fill: C.textSec }} />
+                    <PolarRadiusAxis stroke="none" tick={false} domain={[0, 20]} />
+                    <Radar
+                      name="Sesión 1"
+                      dataKey="session1_avg"
+                      stroke={C.blue}
+                      fill={C.blue}
+                      fillOpacity={0.15}
+                      strokeWidth={2.5}
+                    />
+                    <Radar
+                      name="Sesión 2"
+                      dataKey="session2_avg"
+                      stroke={C.red}
+                      fill={C.red}
+                      fillOpacity={0.15}
+                      strokeWidth={2.5}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: C.surface,
+                        border: `1px solid ${C.border}`,
+                        borderRadius: 6,
+                        padding: '8px 12px',
+                        fontSize: 12,
+                      }}
+                      formatter={(value: any, name: string) =>
+                        value !== null && value !== undefined ? [`${value}/20`, name] : ['N/A', name]
+                      }
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+                {/* Leyenda */}
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginTop: 8 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: C.textSec }}>
+                    <span style={{ width: 12, height: 3, background: C.blue, display: 'inline-block', borderRadius: 2 }} />
+                    Sesión 1
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: C.textSec }}>
+                    <span style={{ width: 12, height: 3, background: C.red, display: 'inline-block', borderRadius: 2 }} />
+                    Sesión 2
+                  </span>
+                </div>
+              </div>
 
               <div style={styles.scoreRingBox as React.CSSProperties}>
                 <ScoreRing score={session2.global_score} size={100} />
@@ -535,12 +554,12 @@ const ComparisonView = ({
                     <td style={styles.td}>{data.score1}</td>
                     <td style={styles.td}>{data.score2}</td>
                     <td style={styles.td}>
-                      <span style={data.delta > 0 ? { color: C.green } : { color: C.red }}>
+                      <span style={{ color: deltaColor(data.delta) }}>
                         {data.delta > 0 ? '+' : ''}{Math.round(data.delta * 100) / 100}
                       </span>
                     </td>
                     <td style={styles.td}>
-                      <span style={data.percentDelta > 0 ? { color: C.green } : { color: C.red }}>
+                      <span style={{ color: deltaColor(data.percentDelta) }}>
                         {data.percentDelta > 0 ? '+' : ''}{data.percentDelta.toFixed(1)}%
                       </span>
                     </td>
@@ -575,12 +594,12 @@ const ComparisonView = ({
                         <td style={styles.td}>{Math.round(data.score1)}</td>
                         <td style={styles.td}>{Math.round(data.score2)}</td>
                         <td style={styles.td}>
-                          <span style={data.delta > 0 ? { color: C.green, fontSize: 12 } : { color: C.red, fontSize: 12 }}>
+                          <span style={{ color: deltaColor(data.delta), fontSize: 12 }}>
                             {data.delta > 0 ? '+' : ''}{data.delta.toFixed(1)}
                           </span>
                         </td>
                         <td style={styles.td}>
-                          <span style={data.percentDelta > 0 ? { color: C.green, fontSize: 12 } : { color: C.red, fontSize: 12 }}>
+                          <span style={{ color: deltaColor(data.percentDelta), fontSize: 12 }}>
                             {data.percentDelta > 0 ? '+' : ''}{data.percentDelta.toFixed(1)}%
                           </span>
                         </td>
@@ -620,6 +639,13 @@ export const SessionComparison = ({
   const [selectedSessions, setSelectedSessions] = useState<[Session | null, Session | null]>([null, null]);
   const [loading, setLoading] = useState(!initialSessionList);
 
+  // Sync when an external session list is provided and updated
+  useEffect(() => {
+    if (initialSessionList) {
+      setSessions(initialSessionList);
+    }
+  }, [initialSessionList]);
+
   useEffect(() => {
     if (!isOpen) {
       setMode('selector');
@@ -630,7 +656,7 @@ export const SessionComparison = ({
     if (!initialSessionList) {
       loadSessions();
     }
-  }, [isOpen, initialSessionList]);
+  }, [isOpen]);
 
   const loadSessions = async () => {
     try {
@@ -639,7 +665,7 @@ export const SessionComparison = ({
         .from('sessions')
         .select('*')
         .eq('user_id', userId)
-        .order('actual_session_date', { ascending: false, nullsLast: true })
+        .order('actual_session_date', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false });
 
       if (error) throw error;
