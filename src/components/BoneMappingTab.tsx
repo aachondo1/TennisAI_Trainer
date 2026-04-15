@@ -387,20 +387,26 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
     <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
 
       {/* Header row: stroke selector + meta */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
-        <div style={{ display:'flex', gap:6 }}>
-          {strokes.map(s => (
-            <button key={s} onClick={() => { setActiveStroke(s); setActiveMode('representative'); }}
-              style={{
-                padding:'6px 14px', borderRadius:6, cursor:'pointer', fontSize:12, fontWeight:500,
-                fontFamily:"'DM Sans',sans-serif", transition:'all 0.15s',
-                border:`1px solid ${stroke===s ? '#10B981' : C.border}`,
-                background: stroke===s ? '#10B98115' : 'transparent',
-                color: stroke===s ? '#10B981' : C.textSec,
-              }}>
-              {strokeLabel(s)}
-            </button>
-          ))}
+      <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+        <div>
+          <div style={{ fontSize:10, color:C.textMut, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:"'DM Mono',monospace", marginBottom:8 }}>
+            Selecciona tipo de golpe
+          </div>
+          <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+            {strokes.map(s => (
+              <button key={s} onClick={() => { setActiveStroke(s); setActiveMode('representative'); }}
+                style={{
+                  padding:'10px 20px', borderRadius:8, cursor:'pointer', fontSize:14, fontWeight:600,
+                  fontFamily:"'DM Sans',sans-serif", transition:'all 0.2s',
+                  border:`2px solid ${stroke===s ? '#10B981' : C.border}`,
+                  background: stroke===s ? '#10B981' : C.surface,
+                  color: stroke===s ? '#0f1923' : C.textSec,
+                  boxShadow: stroke===s ? `0 4px 12px rgba(16, 185, 129, 0.3)` : 'none',
+                }}>
+                {strokeLabel(s)}
+              </button>
+            ))}
+          </div>
         </div>
         <div style={{ display:'flex', gap:16, fontSize:11, color:C.textMut, fontFamily:"'DM Mono',monospace" }}>
           <span>{meta?.total_impacts ?? '—'} impactos detectados</span>
