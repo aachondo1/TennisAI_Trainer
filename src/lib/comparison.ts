@@ -185,10 +185,10 @@ export const calculateDimensionDeltas = (
     result[golpe] = {};
 
     for (const dim of dimensions) {
-      // Skip saque-only dimensions for non-saque golpes
+      // Skip dimensions that don't apply to this golpe
       if (golpe !== 'saque' && dim.key === 'preparacion_toss') continue;
       if (golpe === 'saque' && dim.key === 'preparacion') continue;
-      if (golpe !== 'saque' && dim.key === 'posicion_pies' && golpe === 'saque') continue;
+      if (golpe === 'saque' && dim.key === 'posicion_pies') continue;
 
       const dimensionKey = golpe === 'saque' && dim.key === 'preparacion_toss' ? 'preparacion_toss' : dim.key;
 
