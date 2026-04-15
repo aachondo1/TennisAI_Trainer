@@ -478,9 +478,9 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
     return ATP_IMPACT_POSES[strokeType] || ATP_IMPACT_POSES.forehand;
   };
 
-  const idealPose = currentMode?.ideal_pose_overlay?.length === 33
-    ? currentMode.ideal_pose_overlay
-    : getIdealPose(stroke);
+  // Always use our ATP impact poses (which show actual impact position)
+  // instead of the backend's ideal_pose_overlay (which is often neutral stance)
+  const idealPose = getIdealPose(stroke);
 
   const modeConfig = [
     { key:'representative', label:'Promedio top-5',    color:'#3B82F6' },
