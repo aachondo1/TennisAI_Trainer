@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, Session } from '../lib/supabase';
-import { TrendingUp, TrendingDown, Filter, ArrowRight, Minus, Trash2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Filter, ArrowRight, Minus, Trash2, BarChart3 } from 'lucide-react';
 import { C } from '../lib/theme';
+import { SessionComparison } from '../components/SessionComparison';
+import { useAuth } from '../contexts/AuthContext';
 
 const fonts = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
@@ -206,6 +208,7 @@ function SessionRow({
 /* ─── MAIN PAGE ──────────────────────────────────────────────── */
 export function History() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [sessions,    setSessions]    = useState<Session[]>([]);
   const [filtered,    setFiltered]    = useState<Session[]>([]);
   const [loading,     setLoading]     = useState(true);
@@ -214,6 +217,7 @@ export function History() {
   const [scoreRange, setScoreRange] = useState([0, 100]);
   const [dateRange, setDateRange] = useState<[string | null, string | null]>([null, null]);
   const [deletingId,  setDeletingId]  = useState<string | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
 
   useEffect(() => { loadSessions(); }, []);
 
@@ -332,9 +336,42 @@ export function History() {
         <main style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 32px' }}>
 
           {/* TITLE */}
-          <div style={{ marginBottom: 32, animation: 'fadeIn 0.4s ease' }}>
-            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 26, fontWeight: 700, marginBottom: 4 }}>Historial de sesiones</div>
-            <div style={{ fontSize: 13, color: C.textSec }}>{sessions.length} sesiones registradas</div>
+          <div style={{ marginBottom: 32, animation: 'fadeIn 0.4s ease', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 26, fontWeight: 700, marginBottom: 4 }}>Historial de sesiones</div>
+              <div style={{ fontSize: 13, color: C.textSec }}>{sessions.length} sesiones registradas</div>
+            </div>
+            {sessions.length >= 2 && (
+              <button
+                onClick={() => setShowComparison(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '10px 16px',
+                  borderRadius: 8,
+                  border: `1px solid ${C.border}`,
+                  background: C.surface,
+                  color: C.textPri,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: "'DM Sans', sans-serif",
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = C.accentDark;
+                  e.currentTarget.style.background = C.accentDark + '12';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = C.border;
+                  e.currentTarget.style.background = C.surface;
+                }}
+              >
+                <BarChart3 size={16} />
+                Comparar sesiones
+              </button>
+            )}
           </div>
 
           {/* STATS */}
@@ -535,6 +572,15 @@ export function History() {
         <footer style={{ borderTop: `1px solid ${C.border}`, padding: '20px 32px', textAlign: 'center', fontSize: 11, color: C.textMut, fontFamily: "'DM Mono', monospace" }}>
           TennisAI © 2026 — Análisis biomecánico automático potenciado por IA
         </footer>
+
+        {user && (
+          <SessionComparison
+            userId={user.id}
+            isOpen={showComparison}
+            onClose={() => setShowComparison(false)}
+            sessionList={sessions}
+          />
+        )}
       </div>
     </>
   );

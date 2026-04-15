@@ -6,8 +6,9 @@ import {
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { C, ttStyle } from '../lib/theme';
-import { ArrowLeft, Trash2, Send, MessageSquare, ExternalLink, AlertTriangle, Download, Loader2 } from 'lucide-react';
+import { ArrowLeft, Trash2, Send, MessageSquare, ExternalLink, AlertTriangle, Download, Loader2, BarChart3 } from 'lucide-react';
 import { generateSessionPDF } from '../lib/pdfExport';
+import { SessionComparison } from '../components/SessionComparison';
 
 const fonts = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
@@ -67,6 +68,7 @@ export function ProfesorAlumno() {
   const [removing, setRemoving] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [exportingSessionId, setExportingSessionId] = useState<string | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
 
   useEffect(() => {
     if (user && alumnoId) loadData();
@@ -364,7 +366,40 @@ export function ProfesorAlumno() {
 
               {/* Lista de sesiones con comentarios */}
               <div>
-                <div style={{ fontSize: 10, fontWeight: 600, color: C.textMut, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: "'DM Mono', monospace", marginBottom: 14 }}>Sesiones ({sessions.length})</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: C.textMut, textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: "'DM Mono', monospace" }}>Sesiones ({sessions.length})</div>
+                  {sessions.length >= 2 && (
+                    <button
+                      onClick={() => setShowComparison(true)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        padding: '6px 12px',
+                        borderRadius: 6,
+                        border: `1px solid ${C.border}`,
+                        background: C.panel,
+                        color: C.textSec,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        fontFamily: "'DM Sans', sans-serif",
+                        transition: 'all 0.15s',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.borderColor = C.accentDark;
+                        e.currentTarget.style.background = C.accentDark + '12';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.borderColor = C.border;
+                        e.currentTarget.style.background = C.panel;
+                      }}
+                    >
+                      <BarChart3 size={12} />
+                      Comparar
+                    </button>
+                  )}
+                </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {sessions.map(s => (
                     <div key={s.id} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, overflow: 'hidden' }}>
@@ -478,6 +513,14 @@ export function ProfesorAlumno() {
             </div>
           </div>
         </main>
+
+        {alumnoId && (
+          <SessionComparison
+            userId={alumnoId}
+            isOpen={showComparison}
+            onClose={() => setShowComparison(false)}
+          />
+        )}
       </div>
     </>
   );
