@@ -72,17 +72,6 @@ function project(pts: number[][]): [number, number][] {
   return pts.map(([nx, ny]) => [ML + (1 - nx) * DW, MT + ny * DH]);
 }
 
-function alignIdeal(userPts: [number,number][], idealPts: [number,number][]): [number,number][] {
-  const uH = Math.abs(userPts[29][1] - userPts[0][1]);
-  const iH = Math.abs(idealPts[29][1] - idealPts[0][1]);
-  const scale = iH > 1e-4 ? uH / iH : 1;
-  const uHipX = (userPts[23][0] + userPts[24][0]) / 2;
-  const uHipY = (userPts[23][1] + userPts[24][1]) / 2;
-  const iHipX = (idealPts[23][0] + idealPts[24][0]) / 2;
-  const iHipY = (idealPts[23][1] + idealPts[24][1]) / 2;
-  // Mirror ideal pose X coordinates to match user perspective
-  return idealPts.map(([x, y]) => [uHipX + (iHipX - x) * scale, uHipY + (y - iHipY) * scale]);
-}
 
 function boneColor(a: number, b: number, delta: AnalysisDelta[]): string {
   const map: Record<number, string> = {
@@ -159,10 +148,9 @@ function SilhouetteSVG({ pose, C }: {
 }
 
 // ─── SKELETON SVG ─────────────────────────────────────────────
-function SkeletonSVG({ mode, idealPose, C }: {
-  mode:      BoneMode;
-  idealPose: number[][];
-  C:         Record<string, string>;
+function SkeletonSVG({ mode, C }: {
+  mode: BoneMode;
+  C:    Record<string, string>;
 }) {
   const [tooltip, setTooltip] = useState<{ x: number; y: number; idx: number } | null>(null);
 
@@ -172,10 +160,8 @@ function SkeletonSVG({ mode, idealPose, C }: {
     </div>
   );
 
-  const userPts  = project(mode.pose);
-  const idealRaw = project(idealPose) as [number,number][];
-  const idealPts = alignIdeal(userPts as [number,number][], idealRaw);
-  const delta    = mode.analysis_delta;
+  const userPts = project(mode.pose);
+  const delta   = mode.analysis_delta;
 
   const JOINT_LABELS: Record<string, { pts: number[]; label: string }> = {
     right_elbow: { pts:[12,14,16], label:'codo der.' },
@@ -207,23 +193,6 @@ function SkeletonSVG({ mode, idealPose, C }: {
           </pattern>
         </defs>
         <rect width={VW} height={VH} fill="url(#bm-grid)" rx="8"/>
-
-        {/* Layer 1: Benchmark (dashed, emerald) */}
-        <g opacity="0.45">
-          {CONNECTIONS.map(([a,b],i) => {
-            if (!idealPts[a] || !idealPts[b]) return null;
-            return (
-              <line key={i}
-                x1={idealPts[a][0]} y1={idealPts[a][1]}
-                x2={idealPts[b][0]} y2={idealPts[b][1]}
-                stroke="#10B981" strokeWidth="2.5" strokeDasharray="7 5"
-              />
-            );
-          })}
-          {idealPts.map(([x,y],i) => (
-            <circle key={i} cx={x} cy={y} r="4" fill="none" stroke="#10B981" strokeWidth="1.5" opacity="0.6"/>
-          ))}
-        </g>
 
         {/* Layer 2: User skeleton */}
         <g>
@@ -412,58 +381,6 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
 
   // ATP reference poses - exact coordinates from backend bone_mapping_builder.py
   // These are anatomically correct impact positions (same system as MediaPipe)
-  const ATP_IMPACT_POSES: Record<string, number[][]> = {
-    forehand: [
-      [0.50,0.07],[0.52,0.06],[0.54,0.06],[0.56,0.06],
-      [0.48,0.06],[0.46,0.06],[0.44,0.06],[0.57,0.09],
-      [0.43,0.09],[0.51,0.11],[0.49,0.11],
-      [0.62,0.22],[0.38,0.22],  // 11 hombro_izq  12 hombro_der
-      [0.70,0.36],[0.30,0.28],  // 13 codo_izq    14 codo_der (110°)
-      [0.75,0.46],[0.24,0.38],  // 15 muñeca_izq  16 muñeca_der
-      [0.76,0.48],[0.23,0.39],[0.76,0.47],[0.23,0.38],
-      [0.77,0.46],[0.22,0.37],
-      [0.57,0.52],[0.43,0.52],  // 23 cadera_izq  24 cadera_der
-      [0.59,0.67],[0.41,0.67],  // 25 rodilla_izq 26 rodilla_der (140°)
-      [0.60,0.82],[0.40,0.82],
-      [0.61,0.85],[0.39,0.85],[0.62,0.87],[0.38,0.87],
-    ],
-    backhand: [
-      [0.50,0.07],[0.52,0.06],[0.54,0.06],[0.56,0.06],
-      [0.48,0.06],[0.46,0.06],[0.44,0.06],[0.57,0.09],
-      [0.43,0.09],[0.51,0.11],[0.49,0.11],
-      [0.38,0.22],[0.62,0.22],  // 11 hombro_izq  12 hombro_der (rotado)
-      [0.28,0.33],[0.68,0.33],  // 13 codo_izq (130°) 14 codo_der (140°)
-      [0.22,0.42],[0.74,0.43],
-      [0.21,0.43],[0.75,0.44],[0.21,0.42],[0.75,0.43],
-      [0.20,0.41],[0.76,0.42],
-      [0.43,0.52],[0.57,0.52],  // 23 cadera_izq  24 cadera_der
-      [0.41,0.67],[0.59,0.67],  // 25 rodilla_izq 26 rodilla_der (138°)
-      [0.40,0.82],[0.60,0.82],
-      [0.39,0.85],[0.61,0.85],[0.38,0.87],[0.62,0.87],
-    ],
-    saque: [
-      [0.50,0.05],[0.52,0.04],[0.54,0.04],[0.56,0.04],
-      [0.48,0.04],[0.46,0.04],[0.44,0.04],[0.57,0.07],
-      [0.43,0.07],[0.51,0.09],[0.49,0.09],
-      [0.65,0.20],[0.38,0.22],  // 11 hombro_izq (toss) 12 hombro_der
-      [0.72,0.10],[0.28,0.08],  // 13 codo_izq (120°)  14 codo_der (165°)
-      [0.74,0.04],[0.22,0.02],  // 15 muñeca_izq       16 muñeca_der (arriba)
-      [0.75,0.03],[0.21,0.01],[0.75,0.03],[0.21,0.01],
-      [0.76,0.02],[0.20,0.01],
-      [0.57,0.52],[0.43,0.52],  // 23 cadera_izq  24 cadera_der
-      [0.58,0.67],[0.42,0.67],  // 25 rodilla_izq 26 rodilla_der (145°)
-      [0.59,0.82],[0.41,0.82],
-      [0.60,0.85],[0.40,0.85],[0.61,0.87],[0.39,0.87],
-    ],
-  };
-
-  const getIdealPose = (strokeType: string) => {
-    return ATP_IMPACT_POSES[strokeType] || ATP_IMPACT_POSES.forehand;
-  };
-
-  // Always use our ATP impact poses (which show actual impact position)
-  // instead of the backend's ideal_pose_overlay (which is often neutral stance)
-  const idealPose = getIdealPose(stroke);
 
   const modeConfig = [
     { key:'representative', label:'Promedio top-5',    color:'#3B82F6' },
@@ -533,10 +450,6 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
             ))}
             <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:10, fontSize:10, color:'#8a8ea8' }}>
               <span style={{ display:'flex', alignItems:'center', gap:4 }}>
-                <svg width="20" height="6"><line x1="0" y1="3" x2="20" y2="3" stroke="#10B981" strokeWidth="1.5" strokeDasharray="4 3"/></svg>
-                Benchmark ATP
-              </span>
-              <span style={{ display:'flex', alignItems:'center', gap:4 }}>
                 <span style={{ width:8, height:8, borderRadius:'50%', background:'#3B82F6', display:'inline-block' }}/>
                 Usuario
               </span>
@@ -558,7 +471,7 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
                 <div style={{ padding:'8px 12px', borderBottom:`1px solid #2a2d3a`, fontSize:9, color:'#8a8ea8', fontFamily:"'DM Mono',monospace", textTransform:'uppercase', letterSpacing:'0.05em' }}>
                   Ángulos vs ATP
                 </div>
-                <SkeletonSVG mode={currentMode} idealPose={idealPose} C={C}/>
+                <SkeletonSVG mode={currentMode} C={C}/>
               </div>
             </div>
           ) : (
