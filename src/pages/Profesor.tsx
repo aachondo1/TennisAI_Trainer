@@ -33,11 +33,6 @@ type ActivityItem = {
   created_at: string;
 };
 
-type SortConfig = {
-  key: keyof RankingRow;
-  direction: 'asc' | 'desc';
-};
-
 const scoreColor = (s: number) => {
   if (s >= 80) return C.accentDark;
   if (s >= 65) return C.blue;
@@ -82,8 +77,10 @@ const calculateRankingData = (alumno: Alumno, sessions: any[]): RankingRow => {
     new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 
-  const avgScore = sessions.length > 0
-    ? Math.round(sessions.reduce((sum, s) => sum + s.global_score, 0) / sessions.length * 10) / 10
+  // Filter out sessions with null global_score before computing average
+  const scoredSessions = sessions.filter(s => s.global_score != null);
+  const avgScore = scoredSessions.length > 0
+    ? Math.round((scoredSessions.reduce((sum, s) => sum + s.global_score, 0) / scoredSessions.length) * 10) / 10
     : 0;
 
   const lastScore = sorted[0]?.global_score ?? null;

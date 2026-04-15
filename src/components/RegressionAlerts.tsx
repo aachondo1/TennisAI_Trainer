@@ -68,7 +68,9 @@ export const RegressionAlerts: React.FC<RegressionAlertsProps> = ({ alerts, onAl
                   {alert.firstName} {alert.lastName}
                 </div>
                 <div style={{ fontSize: 11, color: C.red, marginTop: 2, fontFamily: "'DM Mono', monospace" }}>
-                  Bajó {Math.abs(alert.previousScore! - alert.lastScore!)} pts ({alert.lastScore} vs {alert.previousScore})
+                  {alert.previousScore != null && alert.lastScore != null
+                    ? `Bajó ${Math.round(Math.abs(alert.previousScore - alert.lastScore))} pts (${alert.lastScore} vs ${alert.previousScore})`
+                    : 'Regresión detectada'}
                 </div>
               </div>
             </div>

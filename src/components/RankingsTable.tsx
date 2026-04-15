@@ -27,7 +27,7 @@ interface RankingsTableProps {
 
 const scoreColor = (score: number | null): string => {
   if (score === null) return C.textMut;
-  if (score >= 80) return '#4a7a00';
+  if (score >= 80) return C.accentDark;
   if (score >= 65) return C.blue;
   if (score >= 50) return C.amber;
   return C.red;
@@ -35,7 +35,7 @@ const scoreColor = (score: number | null): string => {
 
 const deltaColor = (delta: number | null): string => {
   if (delta === null) return C.textMut;
-  if (delta >= 0) return '#16a34a';
+  if (delta >= 0) return C.green;
   return C.red;
 };
 
@@ -111,7 +111,7 @@ export const RankingsTable: React.FC<RankingsTableProps> = ({ data, onRowClick }
               </td>
             </tr>
           ) : (
-            sortedData.map((row, idx) => (
+            sortedData.map((row) => (
               <tr
                 key={row.id}
                 onClick={() => onRowClick?.(row.id)}
