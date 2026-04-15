@@ -99,6 +99,65 @@ function boneColor(a: number, b: number, delta: AnalysisDelta[]): string {
   return entry ? (STATUS_COLOR[entry.status] || STATUS_COLOR.normal) : STATUS_COLOR.normal;
 }
 
+// ─── SILHOUETTE SVG (Simplified stick figure) ────────────────
+function SilhouetteSVG({ pose, C }: {
+  pose: number[][] | null;
+  C:    Record<string, string>;
+}) {
+  if (!pose) return null;
+
+  const userPts = project(pose);
+
+  // Draw simplified stick figure with body segments
+  const connections = [
+    [0, 11], [0, 12],           // head to shoulders
+    [11, 12],                   // shoulders
+    [11, 13], [13, 15],         // left arm
+    [12, 14], [14, 16],         // right arm
+    [11, 23], [12, 24],         // shoulders to hips
+    [23, 24],                   // hips
+    [23, 25], [25, 27],         // left leg
+    [24, 26], [26, 28],         // right leg
+  ];
+
+  return (
+    <svg width="100%" viewBox={`0 0 ${VW} ${VH}`} style={{ display:'block' }}>
+      <defs>
+        <pattern id="sil-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5"/>
+        </pattern>
+      </defs>
+      <rect width={VW} height={VH} fill="url(#sil-grid)" rx="8"/>
+
+      {/* Body connections - thicker and more visible */}
+      <g stroke="#3B82F6" strokeWidth="6" strokeLinecap="round" opacity="0.7" fill="none">
+        {connections.map(([a, b], i) => (
+          <line key={i}
+            x1={userPts[a]?.[0]} y1={userPts[a]?.[1]}
+            x2={userPts[b]?.[0]} y2={userPts[b]?.[1]}
+          />
+        ))}
+      </g>
+
+      {/* Body fill - semi-transparent to show silhouette */}
+      <ellipse cx={userPts[0]?.[0] ?? 0} cy={userPts[0]?.[1] ?? 0} rx="8" ry="10" fill="#3B82F6" opacity="0.4"/>
+
+      {/* Large joint points for clarity */}
+      <g fill="#3B82F6" opacity="0.85">
+        {userPts.map(([x, y], i) => (
+          <circle key={i} cx={x} cy={y} r="5" />
+        ))}
+      </g>
+
+      {/* Highlight impact point (wrist) */}
+      <circle cx={userPts[16]?.[0] ?? 0} cy={userPts[16]?.[1] ?? 0} r="12"
+        fill="none" stroke="#F59E0B" strokeWidth="2" opacity="0.6">
+        <animate attributeName="r" values="10;15;10" dur="1.4s" repeatCount="indefinite"/>
+      </circle>
+    </svg>
+  );
+}
+
 // ─── SKELETON SVG ─────────────────────────────────────────────
 function SkeletonSVG({ mode, idealPose, C }: {
   mode:      BoneMode;
@@ -448,7 +507,23 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
           </div>
 
           {currentMode ? (
-            <SkeletonSVG mode={currentMode} idealPose={idealPose} C={C}/>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, height: '100%' }}>
+              {/* Left: Silhouette */}
+              <div style={{ ...card, padding:0, overflow:'hidden', background:'#0f1117' }}>
+                <div style={{ padding:'8px 12px', borderBottom:`1px solid #2a2d3a`, fontSize:9, color:'#8a8ea8', fontFamily:"'DM Mono',monospace", textTransform:'uppercase', letterSpacing:'0.05em' }}>
+                  Silueta del jugador
+                </div>
+                <SilhouetteSVG pose={currentMode.pose} C={C}/>
+              </div>
+
+              {/* Right: Skeleton with angles */}
+              <div style={{ ...card, padding:0, overflow:'hidden', background:'#0f1117' }}>
+                <div style={{ padding:'8px 12px', borderBottom:`1px solid #2a2d3a`, fontSize:9, color:'#8a8ea8', fontFamily:"'DM Mono',monospace", textTransform:'uppercase', letterSpacing:'0.05em' }}>
+                  Ángulos vs ATP
+                </div>
+                <SkeletonSVG mode={currentMode} idealPose={idealPose} C={C}/>
+              </div>
+            </div>
           ) : (
             <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:VH, color:'#8a8ea8', fontSize:13 }}>
               Sin datos para este modo
