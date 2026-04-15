@@ -63,8 +63,8 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 // ─── HELPERS ──────────────────────────────────────────────────
-const VW = 560; const VH = 420;
-const ML = 80;  const MR = 80; const MT = 30; const MB = 30;
+const VW = 900; const VH = 700;
+const ML = 120;  const MR = 120; const MT = 60; const MB = 60;
 const DW = VW - ML - MR; const DH = VH - MT - MB;
 
 function project(pts: number[][]): [number, number][] {
@@ -148,19 +148,19 @@ function SkeletonSVG({ mode, idealPose, C }: {
         <rect width={VW} height={VH} fill="url(#bm-grid)" rx="8"/>
 
         {/* Layer 1: Benchmark (dashed, emerald) */}
-        <g opacity="0.4">
+        <g opacity="0.45">
           {CONNECTIONS.map(([a,b],i) => {
             if (!idealPts[a] || !idealPts[b]) return null;
             return (
               <line key={i}
                 x1={idealPts[a][0]} y1={idealPts[a][1]}
                 x2={idealPts[b][0]} y2={idealPts[b][1]}
-                stroke="#10B981" strokeWidth="1.5" strokeDasharray="5 4"
+                stroke="#10B981" strokeWidth="2.5" strokeDasharray="7 5"
               />
             );
           })}
           {idealPts.map(([x,y],i) => (
-            <circle key={i} cx={x} cy={y} r="2.5" fill="none" stroke="#10B981" strokeWidth="1" opacity="0.5"/>
+            <circle key={i} cx={x} cy={y} r="4" fill="none" stroke="#10B981" strokeWidth="1.5" opacity="0.6"/>
           ))}
         </g>
 
@@ -173,7 +173,7 @@ function SkeletonSVG({ mode, idealPose, C }: {
                 x1={userPts[a][0]} y1={userPts[a][1]}
                 x2={userPts[b][0]} y2={userPts[b][1]}
                 stroke={boneColor(a, b, delta)}
-                strokeWidth="2.5" strokeLinecap="round" opacity="0.95"
+                strokeWidth="4" strokeLinecap="round" opacity="0.95"
               />
             );
           })}
@@ -187,16 +187,16 @@ function SkeletonSVG({ mode, idealPose, C }: {
             const color = entry ? STATUS_COLOR[entry.status] : '#3B82F6';
             if (isImpact) return (
               <g key={i}>
-                <circle cx={x} cy={y} r="9" fill="none" stroke="#F59E0B" strokeWidth="1.5" opacity="0.5">
-                  <animate attributeName="r" values="7;12;7" dur="1.4s" repeatCount="indefinite"/>
+                <circle cx={x} cy={y} r="15" fill="none" stroke="#F59E0B" strokeWidth="2" opacity="0.5">
+                  <animate attributeName="r" values="12;20;12" dur="1.4s" repeatCount="indefinite"/>
                   <animate attributeName="opacity" values="0.6;0.2;0.6" dur="1.4s" repeatCount="indefinite"/>
                 </circle>
-                <circle cx={x} cy={y} r="5" fill="#F59E0B" stroke="#0f1923" strokeWidth="1.5"/>
+                <circle cx={x} cy={y} r="8" fill="#F59E0B" stroke="#0f1923" strokeWidth="2"/>
               </g>
             );
             return (
-              <circle key={i} cx={x} cy={y} r="4"
-                fill={color} stroke="#0f1923" strokeWidth="1" opacity="0.9"
+              <circle key={i} cx={x} cy={y} r="7"
+                fill={color} stroke="#0f1923" strokeWidth="1.5" opacity="0.9"
                 style={{ cursor: 'pointer' }}
                 onMouseEnter={() => setTooltip({ x, y, idx: i })}
                 onMouseLeave={() => setTooltip(null)}
@@ -213,10 +213,10 @@ function SkeletonSVG({ mode, idealPose, C }: {
           const [lx, ly] = userPts[midIdx];
           return (
             <g key={entry.joint}>
-              <rect x={lx+8} y={ly-14} width={94} height={22} rx="5"
-                fill="#1a1d27" stroke="#EF4444" strokeWidth="1" opacity="0.92"/>
-              <text x={lx+14} y={ly+2}
-                fill="#EF4444" fontSize="10" fontWeight="600"
+              <rect x={lx+12} y={ly-20} width={130} height={32} rx="6"
+                fill="#1a1d27" stroke="#EF4444" strokeWidth="2" opacity="0.95"/>
+              <text x={lx+18} y={ly+6}
+                fill="#EF4444" fontSize="15" fontWeight="600"
                 fontFamily="'DM Mono', monospace">
                 {entry.user_angle}° vs {entry.ideal_angle}°
               </text>
@@ -227,24 +227,24 @@ function SkeletonSVG({ mode, idealPose, C }: {
         {/* Hover tooltip */}
         {tooltip && (() => {
           const entry = getTooltipEntry(tooltip.idx);
-          const tx = tooltip.x + 14 > VW - 160 ? tooltip.x - 160 : tooltip.x + 14;
-          const ty = Math.min(tooltip.y - 10, VH - 90);
+          const tx = tooltip.x + 20 > VW - 240 ? tooltip.x - 240 : tooltip.x + 20;
+          const ty = Math.min(tooltip.y - 20, VH - 140);
           return (
             <g>
-              <rect x={tx} y={ty} width={150} height={entry ? 72 : 36} rx="6"
-                fill="#12151e" stroke="#2a2d3a" strokeWidth="1" opacity="0.96"/>
-              <text x={tx+10} y={ty+16} fill="#e8eaf0" fontSize="11" fontWeight="600"
+              <rect x={tx} y={ty} width={220} height={entry ? 110 : 56} rx="8"
+                fill="#12151e" stroke="#2a2d3a" strokeWidth="2" opacity="0.98"/>
+              <text x={tx+14} y={ty+26} fill="#e8eaf0" fontSize="14" fontWeight="600"
                 fontFamily="'DM Sans', sans-serif">
                 {PT_NAMES[tooltip.idx] ?? `punto ${tooltip.idx}`}
               </text>
               {entry && (<>
-                <text x={tx+10} y={ty+32} fill="#8a8ea8" fontSize="10"
+                <text x={tx+14} y={ty+50} fill="#8a8ea8" fontSize="12"
                   fontFamily="'DM Sans', sans-serif">{entry.label}</text>
-                <text x={tx+10} y={ty+47} fill={STATUS_COLOR[entry.status]} fontSize="10"
+                <text x={tx+14} y={ty+72} fill={STATUS_COLOR[entry.status]} fontSize="12"
                   fontFamily="'DM Mono', monospace">
                   {entry.user_angle}° usuario · {entry.ideal_angle}° ATP
                 </text>
-                <text x={tx+10} y={ty+62} fill="#8a8ea8" fontSize="10"
+                <text x={tx+14} y={ty+94} fill="#8a8ea8" fontSize="12"
                   fontFamily="'DM Mono', monospace">
                   desviación {entry.deviation_pct}%
                 </text>
@@ -406,7 +406,7 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
       </div>
 
       {/* Main grid: SVG + analysis */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 340px', gap:16, alignItems:'start' }}>
+      <div style={{ display:'grid', gridTemplateColumns:'2fr 380px', gap:16, alignItems:'start' }}>
 
         {/* SVG Canvas */}
         <div style={{ ...card, padding:0, overflow:'hidden', background:'#0f1117' }}>
