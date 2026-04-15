@@ -68,7 +68,8 @@ const ML = 120;  const MR = 120; const MT = 60; const MB = 60;
 const DW = VW - ML - MR; const DH = VH - MT - MB;
 
 function project(pts: number[][]): [number, number][] {
-  return pts.map(([nx, ny]) => [ML + nx * DW, MT + ny * DH]);
+  // Flip X axis to match camera perspective (video is from behind, so we mirror horizontally)
+  return pts.map(([nx, ny]) => [ML + (1 - nx) * DW, MT + ny * DH]);
 }
 
 function alignIdeal(userPts: [number,number][], idealPts: [number,number][]): [number,number][] {
@@ -79,7 +80,8 @@ function alignIdeal(userPts: [number,number][], idealPts: [number,number][]): [n
   const uHipY = (userPts[23][1] + userPts[24][1]) / 2;
   const iHipX = (idealPts[23][0] + idealPts[24][0]) / 2;
   const iHipY = (idealPts[23][1] + idealPts[24][1]) / 2;
-  return idealPts.map(([x, y]) => [uHipX + (x - iHipX) * scale, uHipY + (y - iHipY) * scale]);
+  // Mirror ideal pose X coordinates to match user perspective
+  return idealPts.map(([x, y]) => [uHipX + (iHipX - x) * scale, uHipY + (y - iHipY) * scale]);
 }
 
 function boneColor(a: number, b: number, delta: AnalysisDelta[]): string {
@@ -351,15 +353,16 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
 
   // Use the ATP reference pose embedded in the current mode by the backend.
   // Falls back to a 33-point forehand stance if the overlay is missing.
+  // NOTE: Coordinates are mirrored horizontally to match camera perspective
   const IDEAL_POSE_FALLBACK: number[][] = [
-    [0.50,0.06],[0.52,0.05],[0.52,0.05],[0.52,0.05],[0.48,0.05],[0.48,0.05],[0.48,0.05],[0.54,0.05],[0.46,0.05],
-    [0.62,0.20],[0.38,0.20],
-    [0.70,0.31],[0.30,0.31],[0.78,0.40],[0.22,0.40],
-    [0.80,0.42],[0.20,0.42],[0.81,0.41],[0.19,0.41],[0.80,0.43],[0.20,0.43],
-    [0.55,0.50],[0.45,0.50],
-    [0.56,0.64],[0.44,0.64],[0.56,0.79],[0.44,0.79],
-    [0.56,0.82],[0.44,0.82],[0.58,0.84],[0.42,0.84],
-    [0.58,0.87],[0.42,0.87],
+    [0.50,0.06],[0.48,0.05],[0.48,0.05],[0.48,0.05],[0.52,0.05],[0.52,0.05],[0.52,0.05],[0.46,0.05],[0.54,0.05],
+    [0.38,0.20],[0.62,0.20],
+    [0.30,0.31],[0.70,0.31],[0.22,0.40],[0.78,0.40],
+    [0.20,0.42],[0.80,0.42],[0.19,0.41],[0.81,0.41],[0.20,0.43],[0.80,0.43],
+    [0.45,0.50],[0.55,0.50],
+    [0.44,0.64],[0.56,0.64],[0.44,0.79],[0.56,0.79],
+    [0.44,0.82],[0.56,0.82],[0.42,0.84],[0.58,0.84],
+    [0.42,0.87],[0.58,0.87],
   ];
 
   const idealPose = currentMode?.ideal_pose_overlay?.length === 33
