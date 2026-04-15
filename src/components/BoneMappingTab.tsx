@@ -410,23 +410,77 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
   const currentMode = bmData.modes?.[activeMode];
   const meta        = bmData.session_meta;
 
-  // Use the ATP reference pose embedded in the current mode by the backend.
-  // Falls back to a 33-point forehand stance if the overlay is missing.
+  // ATP reference poses at the moment of impact for each stroke type
   // NOTE: Coordinates are mirrored horizontally to match camera perspective
-  const IDEAL_POSE_FALLBACK: number[][] = [
-    [0.50,0.06],[0.48,0.05],[0.48,0.05],[0.48,0.05],[0.52,0.05],[0.52,0.05],[0.52,0.05],[0.46,0.05],[0.54,0.05],
-    [0.38,0.20],[0.62,0.20],
-    [0.30,0.31],[0.70,0.31],[0.22,0.40],[0.78,0.40],
-    [0.20,0.42],[0.80,0.42],[0.19,0.41],[0.81,0.41],[0.20,0.43],[0.80,0.43],
-    [0.45,0.50],[0.55,0.50],
-    [0.44,0.64],[0.56,0.64],[0.44,0.79],[0.56,0.79],
-    [0.44,0.82],[0.56,0.82],[0.42,0.84],[0.58,0.84],
-    [0.42,0.87],[0.58,0.87],
-  ];
+
+  const ATP_IMPACT_POSES: Record<string, number[][]> = {
+    forehand: [ // Right-handed forehand at contact
+      // Head/eyes/ears
+      [0.50,0.08],[0.48,0.06],[0.48,0.06],[0.48,0.06],[0.52,0.06],[0.52,0.06],[0.52,0.06],[0.46,0.06],[0.54,0.06],
+      // Eyes outer
+      [0.36,0.18],[0.64,0.18],
+      // Shoulders (right back, left forward)
+      [0.28,0.28],[0.72,0.28],
+      // Elbows (right extended, left guiding)
+      [0.20,0.36],[0.75,0.42],
+      // Wrists
+      [0.18,0.38],[0.82,0.38],[0.17,0.37],[0.83,0.39],[0.18,0.40],[0.82,0.40],
+      // Hips
+      [0.43,0.52],[0.57,0.52],
+      // Knees
+      [0.42,0.68],[0.58,0.68],[0.42,0.80],[0.58,0.80],
+      // Ankles
+      [0.41,0.86],[0.59,0.86],[0.40,0.89],[0.60,0.89],
+      // Feet
+      [0.39,0.92],[0.61,0.92],
+    ],
+    backhand: [ // Two-handed backhand at contact
+      [0.50,0.08],[0.48,0.06],[0.48,0.06],[0.48,0.06],[0.52,0.06],[0.52,0.06],[0.52,0.06],[0.46,0.06],[0.54,0.06],
+      [0.38,0.16],[0.62,0.16],
+      // Shoulders (both forward for backhand)
+      [0.32,0.28],[0.68,0.28],
+      // Elbows (both extended forward at contact)
+      [0.25,0.38],[0.75,0.38],
+      // Wrists (both pulling through)
+      [0.22,0.40],[0.78,0.40],[0.21,0.39],[0.79,0.41],[0.22,0.42],[0.78,0.42],
+      // Hips (squared up)
+      [0.45,0.52],[0.55,0.52],
+      // Knees
+      [0.44,0.68],[0.56,0.68],[0.44,0.80],[0.56,0.80],
+      // Ankles
+      [0.43,0.86],[0.57,0.86],[0.42,0.89],[0.58,0.89],
+      // Feet
+      [0.41,0.92],[0.59,0.92],
+    ],
+    saque: [ // Serve at contact (extended up)
+      // Head/eyes/ears
+      [0.50,0.02],[0.48,0.01],[0.48,0.01],[0.48,0.01],[0.52,0.01],[0.52,0.01],[0.52,0.01],[0.46,0.01],[0.54,0.01],
+      // Eyes outer
+      [0.40,0.08],[0.60,0.08],
+      // Shoulders (rotated for serve)
+      [0.32,0.22],[0.68,0.22],
+      // Elbows (right fully extended up, left bent)
+      [0.52,0.18],[0.25,0.35],
+      // Wrists (right extended high, left holding toss)
+      [0.54,0.14],[0.28,0.38],[0.56,0.12],[0.26,0.37],[0.54,0.16],[0.28,0.40],
+      // Hips (side on)
+      [0.44,0.55],[0.56,0.55],
+      // Knees
+      [0.43,0.70],[0.57,0.70],[0.43,0.82],[0.57,0.82],
+      // Ankles
+      [0.42,0.88],[0.58,0.88],[0.41,0.91],[0.59,0.91],
+      // Feet
+      [0.40,0.94],[0.60,0.94],
+    ],
+  };
+
+  const getIdealPose = (strokeType: string) => {
+    return ATP_IMPACT_POSES[strokeType] || ATP_IMPACT_POSES.forehand;
+  };
 
   const idealPose = currentMode?.ideal_pose_overlay?.length === 33
     ? currentMode.ideal_pose_overlay
-    : IDEAL_POSE_FALLBACK;
+    : getIdealPose(stroke);
 
   const modeConfig = [
     { key:'representative', label:'Promedio top-5',    color:'#3B82F6' },
