@@ -380,7 +380,7 @@ function TimelineMini({ timeline, C }: { timeline: BoneMappingData['timeline']; 
 // ─── MAIN EXPORT ──────────────────────────────────────────────
 export function BoneMappingTab({ session, C }: { session: any; C: Record<string,string> }) {
   const [activeStroke, setActiveStroke] = useState<string>('');
-  const [activeMode,   setActiveMode]   = useState<'representative'|'best'|'worst'>('representative');
+  const [activeMode,   setActiveMode]   = useState<'representative'|'best'|'worst'>('best');
 
   const rawBoneMapping = session?.raw_data?.bone_mapping;
 
@@ -534,6 +534,23 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
         {/* Right panel */}
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
 
+          {/* Mode indicator */}
+          <div style={{ ...card, background: activeMode === 'best' ? '#10B98110' : activeMode === 'worst' ? '#EF444410' : '#3B82F610', borderColor: activeMode === 'best' ? '#10B981' : activeMode === 'worst' ? '#EF4444' : '#3B82F6' }}>
+            <div style={{ fontSize:9, color:C.textMut, fontFamily:"'DM Mono',monospace", textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>
+              Tipo de golpe mostrado
+            </div>
+            <div style={{ fontSize:12, fontWeight:600, color: activeMode === 'best' ? '#10B981' : activeMode === 'worst' ? '#EF4444' : '#3B82F6', marginBottom:4 }}>
+              {activeMode === 'best' ? '✓ Mejor golpe (golpe real)' : activeMode === 'worst' ? '⚠ Mayor desviación (golpe real)' : '○ Promedio top-5 (no es un golpe real)'}
+            </div>
+            <div style={{ fontSize:10, color:C.textSec, lineHeight:1.5 }}>
+              {activeMode === 'best'
+                ? 'Mostrando el golpe mejor ejecutado de la sesión en el momento exacto del impacto.'
+                : activeMode === 'worst'
+                ? 'Mostrando el golpe con más desviación respecto a ATP en el momento del impacto.'
+                : 'Promedio de los 5 mejores golpes por velocidad. Para ver un golpe real, selecciona "Mejor golpe".'}
+            </div>
+          </div>
+
           {/* Score */}
           <div style={{ ...card, display:'flex', alignItems:'center', gap:16 }}>
             <div style={{ position:'relative', width:64, height:64, flexShrink:0 }}>
@@ -556,15 +573,15 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
             </div>
             <div>
               <div style={{ fontSize:10, color:C.textMut, fontFamily:"'DM Mono',monospace", textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:2 }}>
-                Score biomecánico
+                Score de impacto
               </div>
               <div style={{ fontSize:13, color:C.textSec }}>
                 {currentMode?.label ?? '—'}
               </div>
               {currentMode?.timestamp && (
                 <div style={{ fontSize:10, color:C.textMut, marginTop:2, fontFamily:"'DM Mono',monospace" }}>
-                  t={currentMode.timestamp.toFixed(1)}s
-                  {currentMode.ball_speed && <span> · {currentMode.ball_speed.toFixed(0)} px/f</span>}
+                  📍 Impacto en t={currentMode.timestamp.toFixed(1)}s
+                  {currentMode.ball_speed && <span> · velocidad: {currentMode.ball_speed.toFixed(0)} px/f</span>}
                 </div>
               )}
             </div>
