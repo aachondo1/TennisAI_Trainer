@@ -529,7 +529,7 @@ const ComparisonView = ({
               <tbody>
                 {Object.entries(golpeDeltas).map(([golpe, data]) => (
                   <tr key={golpe}>
-                    <td style={styles.td} style={{ fontWeight: 600 }}>
+                    <td style={{ ...styles.td as React.CSSProperties, fontWeight: 600 }}>
                       {golpe.charAt(0).toUpperCase() + golpe.slice(1)}
                     </td>
                     <td style={styles.td}>{data.score1}</td>
