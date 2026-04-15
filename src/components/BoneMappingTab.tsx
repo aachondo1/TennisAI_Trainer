@@ -414,63 +414,63 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
   // NOTE: Coordinates are mirrored horizontally to match camera perspective
 
   const ATP_IMPACT_POSES: Record<string, number[][]> = {
-    forehand: [ // Right-handed forehand at contact
-      // Head/eyes/ears
-      [0.50,0.08],[0.48,0.06],[0.48,0.06],[0.48,0.06],[0.52,0.06],[0.52,0.06],[0.52,0.06],[0.46,0.06],[0.54,0.06],
+    forehand: [ // Right-handed forehand at contact - DRAMATIC IMPACT POSITION
+      // Head/eyes/ears (rotated down slightly)
+      [0.50,0.10],[0.48,0.08],[0.48,0.08],[0.48,0.08],[0.52,0.08],[0.52,0.08],[0.52,0.08],[0.46,0.08],[0.54,0.08],
       // Eyes outer
-      [0.36,0.18],[0.64,0.18],
-      // Shoulders (right back, left forward)
-      [0.28,0.28],[0.72,0.28],
-      // Elbows (right extended, left guiding)
-      [0.20,0.36],[0.75,0.42],
-      // Wrists
-      [0.18,0.38],[0.82,0.38],[0.17,0.37],[0.83,0.39],[0.18,0.40],[0.82,0.40],
-      // Hips
-      [0.43,0.52],[0.57,0.52],
-      // Knees
-      [0.42,0.68],[0.58,0.68],[0.42,0.80],[0.58,0.80],
-      // Ankles
-      [0.41,0.86],[0.59,0.86],[0.40,0.89],[0.60,0.89],
-      // Feet
-      [0.39,0.92],[0.61,0.92],
+      [0.35,0.16],[0.65,0.16],
+      // Shoulders (rotated back - right shoulder way back, left forward)
+      [0.22,0.26],[0.78,0.26],
+      // Elbows (RIGHT EXTENDED FORWARD, left bent back)
+      [0.08,0.40],[0.88,0.32],
+      // Wrists (right WAY extended forward at contact, left pulling back)
+      [0.05,0.36],[0.92,0.28],[0.04,0.35],[0.94,0.30],[0.06,0.38],[0.90,0.28],
+      // Hips (twisted, weight forward)
+      [0.40,0.54],[0.60,0.54],
+      // Knees (wide stride, bent)
+      [0.35,0.70],[0.65,0.70],[0.35,0.82],[0.65,0.82],
+      // Ankles (wide stance)
+      [0.33,0.88],[0.67,0.88],[0.32,0.91],[0.68,0.91],
+      // Feet (WIDE STRIDE)
+      [0.28,0.94],[0.72,0.94],
     ],
-    backhand: [ // Two-handed backhand at contact
-      [0.50,0.08],[0.48,0.06],[0.48,0.06],[0.48,0.06],[0.52,0.06],[0.52,0.06],[0.52,0.06],[0.46,0.06],[0.54,0.06],
-      [0.38,0.16],[0.62,0.16],
-      // Shoulders (both forward for backhand)
-      [0.32,0.28],[0.68,0.28],
-      // Elbows (both extended forward at contact)
-      [0.25,0.38],[0.75,0.38],
-      // Wrists (both pulling through)
-      [0.22,0.40],[0.78,0.40],[0.21,0.39],[0.79,0.41],[0.22,0.42],[0.78,0.42],
-      // Hips (squared up)
-      [0.45,0.52],[0.55,0.52],
-      // Knees
-      [0.44,0.68],[0.56,0.68],[0.44,0.80],[0.56,0.80],
+    backhand: [ // Two-handed backhand at contact - BOTH ARMS EXTENDED
+      [0.50,0.10],[0.48,0.08],[0.48,0.08],[0.48,0.08],[0.52,0.08],[0.52,0.08],[0.52,0.08],[0.46,0.08],[0.54,0.08],
+      [0.40,0.16],[0.60,0.16],
+      // Shoulders (squared up, rotated forward)
+      [0.30,0.26],[0.70,0.26],
+      // Elbows (BOTH EXTENDED FORWARD in backhand)
+      [0.10,0.36],[0.90,0.36],
+      // Wrists (BOTH extended pulling through)
+      [0.08,0.32],[0.92,0.32],[0.07,0.31],[0.93,0.33],[0.09,0.34],[0.91,0.34],
+      // Hips (squared, more closed)
+      [0.42,0.54],[0.58,0.54],
+      // Knees (wide stride)
+      [0.34,0.70],[0.66,0.70],[0.34,0.82],[0.66,0.82],
       // Ankles
-      [0.43,0.86],[0.57,0.86],[0.42,0.89],[0.58,0.89],
-      // Feet
-      [0.41,0.92],[0.59,0.92],
+      [0.32,0.88],[0.68,0.88],[0.31,0.91],[0.69,0.91],
+      // Feet (WIDE STRIDE)
+      [0.26,0.94],[0.74,0.94],
     ],
-    saque: [ // Serve at contact (extended up)
-      // Head/eyes/ears
-      [0.50,0.02],[0.48,0.01],[0.48,0.01],[0.48,0.01],[0.52,0.01],[0.52,0.01],[0.52,0.01],[0.46,0.01],[0.54,0.01],
+    saque: [ // Serve at contact - ARM FULLY EXTENDED UP
+      // Head/eyes/ears (looking up)
+      [0.50,0.04],[0.48,0.02],[0.48,0.02],[0.48,0.02],[0.52,0.02],[0.52,0.02],[0.52,0.02],[0.46,0.02],[0.54,0.02],
       // Eyes outer
-      [0.40,0.08],[0.60,0.08],
-      // Shoulders (rotated for serve)
-      [0.32,0.22],[0.68,0.22],
-      // Elbows (right fully extended up, left bent)
-      [0.52,0.18],[0.25,0.35],
-      // Wrists (right extended high, left holding toss)
-      [0.54,0.14],[0.28,0.38],[0.56,0.12],[0.26,0.37],[0.54,0.16],[0.28,0.40],
-      // Hips (side on)
-      [0.44,0.55],[0.56,0.55],
-      // Knees
-      [0.43,0.70],[0.57,0.70],[0.43,0.82],[0.57,0.82],
-      // Ankles
-      [0.42,0.88],[0.58,0.88],[0.41,0.91],[0.59,0.91],
-      // Feet
-      [0.40,0.94],[0.60,0.94],
+      [0.42,0.06],[0.58,0.06],
+      // Shoulders (side on, rotated back)
+      [0.28,0.20],[0.72,0.20],
+      // Elbows (right FULLY EXTENDED UP, left at chest)
+      [0.50,0.10],[0.30,0.38],
+      // Wrists (right UP AT CONTACT, left at shoulder/toss height)
+      [0.52,0.05],[0.32,0.36],[0.54,0.04],[0.31,0.37],[0.50,0.06],[0.33,0.35],
+      // Hips (side on, rotated)
+      [0.40,0.56],[0.60,0.56],
+      // Knees (heel up, on toes, stride forward)
+      [0.38,0.72],[0.62,0.72],[0.36,0.84],[0.64,0.84],
+      // Ankles (on toes, weight forward)
+      [0.35,0.90],[0.65,0.90],[0.33,0.93],[0.67,0.93],
+      // Feet (stride, one foot forward)
+      [0.30,0.96],[0.70,0.96],
     ],
   };
 
