@@ -410,67 +410,50 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
   const currentMode = bmData.modes?.[activeMode];
   const meta        = bmData.session_meta;
 
-  // ATP reference poses at the moment of impact for each stroke type
-  // NOTE: Coordinates are in normal MediaPipe space (not mirrored here - project() will apply mirror)
-
+  // ATP reference poses - exact coordinates from backend bone_mapping_builder.py
+  // These are anatomically correct impact positions (same system as MediaPipe)
   const ATP_IMPACT_POSES: Record<string, number[][]> = {
-    forehand: [ // Right-handed forehand at contact - DRAMATIC IMPACT POSITION
-      // Head/eyes/ears (looking down slightly at ball)
-      [0.50,0.10],[0.52,0.08],[0.52,0.08],[0.52,0.08],[0.48,0.08],[0.48,0.08],[0.48,0.08],[0.54,0.08],[0.46,0.08],
-      // Eyes outer
-      [0.65,0.16],[0.35,0.16],
-      // Shoulders (rotated back - left shoulder back, right forward for forehand)
-      [0.78,0.26],[0.22,0.26],
-      // Elbows (LEFT EXTENDED FORWARD in racket, right guiding)
-      [0.92,0.40],[0.12,0.32],
-      // Wrists (left WAY extended forward at contact, right pulling back)
-      [0.95,0.36],[0.08,0.28],[0.96,0.35],[0.06,0.30],[0.94,0.38],[0.10,0.28],
-      // Hips (twisted, weight forward)
-      [0.60,0.54],[0.40,0.54],
-      // Knees (wide stride, bent)
-      [0.65,0.70],[0.35,0.70],[0.65,0.82],[0.35,0.82],
-      // Ankles (wide stance)
-      [0.67,0.88],[0.33,0.88],[0.68,0.91],[0.32,0.91],
-      // Feet (WIDE STRIDE)
-      [0.72,0.94],[0.28,0.94],
+    forehand: [
+      [0.50,0.07],[0.52,0.06],[0.54,0.06],[0.56,0.06],
+      [0.48,0.06],[0.46,0.06],[0.44,0.06],[0.57,0.09],
+      [0.43,0.09],[0.51,0.11],[0.49,0.11],
+      [0.62,0.22],[0.38,0.22],  // 11 hombro_izq  12 hombro_der
+      [0.70,0.36],[0.30,0.28],  // 13 codo_izq    14 codo_der (110°)
+      [0.75,0.46],[0.24,0.38],  // 15 muñeca_izq  16 muñeca_der
+      [0.76,0.48],[0.23,0.39],[0.76,0.47],[0.23,0.38],
+      [0.77,0.46],[0.22,0.37],
+      [0.57,0.52],[0.43,0.52],  // 23 cadera_izq  24 cadera_der
+      [0.59,0.67],[0.41,0.67],  // 25 rodilla_izq 26 rodilla_der (140°)
+      [0.60,0.82],[0.40,0.82],
+      [0.61,0.85],[0.39,0.85],[0.62,0.87],[0.38,0.87],
     ],
-    backhand: [ // Two-handed backhand at contact - BOTH ARMS EXTENDED
-      [0.50,0.10],[0.52,0.08],[0.52,0.08],[0.52,0.08],[0.48,0.08],[0.48,0.08],[0.48,0.08],[0.54,0.08],[0.46,0.08],
-      [0.60,0.16],[0.40,0.16],
-      // Shoulders (squared up, both forward)
-      [0.70,0.26],[0.30,0.26],
-      // Elbows (BOTH EXTENDED FORWARD in backhand)
-      [0.90,0.36],[0.10,0.36],
-      // Wrists (BOTH extended pulling through)
-      [0.92,0.32],[0.08,0.32],[0.93,0.31],[0.07,0.33],[0.91,0.34],[0.09,0.34],
-      // Hips (squared, more closed)
-      [0.58,0.54],[0.42,0.54],
-      // Knees (wide stride)
-      [0.66,0.70],[0.34,0.70],[0.66,0.82],[0.34,0.82],
-      // Ankles
-      [0.68,0.88],[0.32,0.88],[0.69,0.91],[0.31,0.91],
-      // Feet (WIDE STRIDE)
-      [0.74,0.94],[0.26,0.94],
+    backhand: [
+      [0.50,0.07],[0.52,0.06],[0.54,0.06],[0.56,0.06],
+      [0.48,0.06],[0.46,0.06],[0.44,0.06],[0.57,0.09],
+      [0.43,0.09],[0.51,0.11],[0.49,0.11],
+      [0.38,0.22],[0.62,0.22],  // 11 hombro_izq  12 hombro_der (rotado)
+      [0.28,0.33],[0.68,0.33],  // 13 codo_izq (130°) 14 codo_der (140°)
+      [0.22,0.42],[0.74,0.43],
+      [0.21,0.43],[0.75,0.44],[0.21,0.42],[0.75,0.43],
+      [0.20,0.41],[0.76,0.42],
+      [0.43,0.52],[0.57,0.52],  // 23 cadera_izq  24 cadera_der
+      [0.41,0.67],[0.59,0.67],  // 25 rodilla_izq 26 rodilla_der (138°)
+      [0.40,0.82],[0.60,0.82],
+      [0.39,0.85],[0.61,0.85],[0.38,0.87],[0.62,0.87],
     ],
-    saque: [ // Serve at contact - ARM FULLY EXTENDED UP
-      // Head/eyes/ears (looking up)
-      [0.50,0.04],[0.48,0.02],[0.48,0.02],[0.48,0.02],[0.52,0.02],[0.52,0.02],[0.52,0.02],[0.54,0.02],[0.46,0.02],
-      // Eyes outer
-      [0.58,0.06],[0.42,0.06],
-      // Shoulders (side on, rotated back)
-      [0.72,0.20],[0.28,0.20],
-      // Elbows (left FULLY EXTENDED UP, right at chest)
-      [0.50,0.10],[0.70,0.38],
-      // Wrists (left UP AT CONTACT, right at shoulder/toss height)
-      [0.48,0.05],[0.68,0.36],[0.46,0.04],[0.69,0.37],[0.50,0.06],[0.67,0.35],
-      // Hips (side on, rotated)
-      [0.60,0.56],[0.40,0.56],
-      // Knees (heel up, on toes, stride forward)
-      [0.62,0.72],[0.38,0.72],[0.64,0.84],[0.36,0.84],
-      // Ankles (on toes, weight forward)
-      [0.65,0.90],[0.35,0.90],[0.67,0.93],[0.33,0.93],
-      // Feet (stride, one foot forward)
-      [0.70,0.96],[0.30,0.96],
+    saque: [
+      [0.50,0.05],[0.52,0.04],[0.54,0.04],[0.56,0.04],
+      [0.48,0.04],[0.46,0.04],[0.44,0.04],[0.57,0.07],
+      [0.43,0.07],[0.51,0.09],[0.49,0.09],
+      [0.65,0.20],[0.38,0.22],  // 11 hombro_izq (toss) 12 hombro_der
+      [0.72,0.10],[0.28,0.08],  // 13 codo_izq (120°)  14 codo_der (165°)
+      [0.74,0.04],[0.22,0.02],  // 15 muñeca_izq       16 muñeca_der (arriba)
+      [0.75,0.03],[0.21,0.01],[0.75,0.03],[0.21,0.01],
+      [0.76,0.02],[0.20,0.01],
+      [0.57,0.52],[0.43,0.52],  // 23 cadera_izq  24 cadera_der
+      [0.58,0.67],[0.42,0.67],  // 25 rodilla_izq 26 rodilla_der (145°)
+      [0.59,0.82],[0.41,0.82],
+      [0.60,0.85],[0.40,0.85],[0.61,0.87],[0.39,0.87],
     ],
   };
 
