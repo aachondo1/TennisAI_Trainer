@@ -103,7 +103,7 @@ const calculateRankingData = (alumno: Alumno, sessions: any[]): RankingRow => {
   };
 };
 
-const calculateRegressionAlerts = (alumno: Alumno, sessions: any[]): RegressionAlert | null => {
+const calculateRegressionAlerts = (alumno: Alumno, sessions: any[]): RegressionAlert[] => {
   const sorted = [...sessions].sort((a, b) =>
     new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
@@ -113,9 +113,11 @@ const calculateRegressionAlerts = (alumno: Alumno, sessions: any[]): RegressionA
   const lastSessionDate = sorted[0]?.created_at ?? null;
   const daysSinceLastSession = calculateDaysSince(lastSessionDate);
 
+  const results: RegressionAlert[] = [];
+
   // Alert: drop >5 puntos
   if (lastScore !== null && secondLastScore !== null && secondLastScore - lastScore > 5) {
-    return {
+    results.push({
       alumnoId: alumno.id,
       firstName: alumno.first_name,
       lastName: alumno.last_name,
@@ -123,22 +125,22 @@ const calculateRegressionAlerts = (alumno: Alumno, sessions: any[]): RegressionA
       severity: 'high',
       lastScore,
       previousScore: secondLastScore,
-    };
+    });
   }
 
   // Alert: inactivo >14 días
   if (daysSinceLastSession > 14 && sessions.length > 0) {
-    return {
+    results.push({
       alumnoId: alumno.id,
       firstName: alumno.first_name,
       lastName: alumno.last_name,
       type: 'inactive',
       severity: 'medium',
       daysSinceLastSession,
-    };
+    });
   }
 
-  return null;
+  return results;
 };
 
 export function Profesor() {
@@ -234,8 +236,8 @@ export function Profesor() {
         const ranking = calculateRankingData(alumno, alumnoSessions);
         rankingRows.push(ranking);
 
-        const alert = calculateRegressionAlerts(alumno, alumnoSessions);
-        if (alert) alerts.push(alert);
+        const alumnoAlerts = calculateRegressionAlerts(alumno, alumnoSessions);
+        alerts.push(...alumnoAlerts);
       }
     });
 

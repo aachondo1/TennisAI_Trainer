@@ -57,9 +57,11 @@ export const RegressionAlerts: React.FC<RegressionAlertsProps> = ({ alerts, onAl
                 }
               }}
               onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLDivElement;
-                el.style.background = C.red + '15';
-                el.style.transform = 'translateX(0)';
+                if (onAlumnoClick) {
+                  const el = e.currentTarget as HTMLDivElement;
+                  el.style.background = C.red + '15';
+                  el.style.transform = 'translateX(0)';
+                }
               }}
             >
               <TrendingDown size={16} color={C.red} style={{ flexShrink: 0 }} />
@@ -69,7 +71,7 @@ export const RegressionAlerts: React.FC<RegressionAlertsProps> = ({ alerts, onAl
                 </div>
                 <div style={{ fontSize: 11, color: C.red, marginTop: 2, fontFamily: "'DM Mono', monospace" }}>
                   {alert.previousScore != null && alert.lastScore != null
-                    ? `Bajó ${Math.round(Math.abs(alert.previousScore - alert.lastScore))} pts (${alert.lastScore} vs ${alert.previousScore})`
+                    ? `Bajó ${Math.round(Math.abs(alert.previousScore - alert.lastScore))} pts (de ${alert.previousScore} a ${alert.lastScore})`
                     : 'Regresión detectada'}
                 </div>
               </div>
@@ -105,9 +107,11 @@ export const RegressionAlerts: React.FC<RegressionAlertsProps> = ({ alerts, onAl
                 }
               }}
               onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLDivElement;
-                el.style.background = C.amber + '15';
-                el.style.transform = 'translateX(0)';
+                if (onAlumnoClick) {
+                  const el = e.currentTarget as HTMLDivElement;
+                  el.style.background = C.amber + '15';
+                  el.style.transform = 'translateX(0)';
+                }
               }}
             >
               <Calendar size={16} color={C.amber} style={{ flexShrink: 0 }} />
@@ -125,7 +129,7 @@ export const RegressionAlerts: React.FC<RegressionAlertsProps> = ({ alerts, onAl
       )}
 
       <div style={{ fontSize: 11, color: C.textMut, marginTop: 12, fontStyle: 'italic', fontFamily: "'DM Mono', monospace" }}>
-        Total: {highSeverityAlerts.length} crítica(s), {mediumSeverityAlerts.length} inactiv(a/o/os/as)
+        Total: {highSeverityAlerts.length} crítica(s), {mediumSeverityAlerts.length} inactivo(s)
       </div>
     </div>
   );
