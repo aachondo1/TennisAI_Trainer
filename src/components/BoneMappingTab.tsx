@@ -292,27 +292,34 @@ function SkeletonSVG({ mode, C }: {
 // ─── JOINT CARDS ──────────────────────────────────────────────
 function JointCards({ delta, C }: { delta: AnalysisDelta[]; C: Record<string,string> }) {
   return (
-    <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+    <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:12 }}>
       {delta.map(entry => {
         const color = STATUS_COLOR[entry.status];
         const fillPct = Math.max(0, 100 - entry.deviation_pct * 2.5);
-        const statusLabel = { normal:'Normal', warning:'Desviación', critical:'Crítico' }[entry.status];
+        const statusLabel = { normal:'✓ Normal', warning:'⚠ Desviación', critical:'✕ Crítico' }[entry.status];
+        const bgColor = entry.status === 'critical' ? '#EF444420' : entry.status === 'warning' ? '#F9731620' : '#3B82F620';
         return (
           <div key={entry.joint} style={{
-            background: C.surface, border:`1px solid ${C.border}`,
-            borderRadius:8, padding:'10px 12px',
+            background: bgColor,
+            border:`1px solid ${color}40`,
+            borderRadius:10,
+            padding:'14px 16px',
+            transition:'all 0.2s ease',
           }}>
-            <div style={{ fontSize:10, color:C.textMut, marginBottom:4, fontFamily:"'DM Mono',monospace", textTransform:'uppercase', letterSpacing:'0.08em' }}>
+            <div style={{ fontSize:9, color:C.textMut, marginBottom:6, fontFamily:"'DM Mono',monospace", textTransform:'uppercase', letterSpacing:'0.08em', fontWeight:700 }}>
               {entry.label}
             </div>
-            <div style={{ display:'flex', alignItems:'baseline', gap:5, marginBottom:6 }}>
-              <span style={{ fontFamily:"'DM Mono',monospace", fontSize:20, fontWeight:500, color }}>{entry.user_angle}°</span>
-              <span style={{ fontSize:11, color:C.textMut }}>/ {entry.ideal_angle}° ATP</span>
+            <div style={{ display:'flex', alignItems:'baseline', gap:6, marginBottom:8 }}>
+              <span style={{ fontFamily:"'DM Mono',monospace", fontSize:24, fontWeight:700, color }}>{entry.user_angle}°</span>
+              <span style={{ fontSize:11, color:C.textSec }}>vs {entry.ideal_angle}°</span>
             </div>
-            <div style={{ height:4, background:C.border, borderRadius:2, overflow:'hidden', marginBottom:5 }}>
-              <div style={{ height:'100%', width:`${fillPct}%`, background:color, borderRadius:2, transition:'width 0.5s ease' }}/>
+            <div style={{ height:6, background:C.border+'40', borderRadius:3, overflow:'hidden', marginBottom:8 }}>
+              <div style={{ height:'100%', width:`${fillPct}%`, background:color, borderRadius:3, transition:'width 0.5s ease' }}/>
             </div>
-            <div style={{ fontSize:10, fontWeight:600, color }}>{statusLabel} · {entry.deviation_pct}%</div>
+            <div style={{ fontSize:11, fontWeight:700, color, display:'flex', alignItems:'center', gap:4 }}>
+              {statusLabel}
+              <span style={{ fontFamily:"'DM Mono',monospace", fontSize:10, color:C.textMut }}>({entry.deviation_pct}%)</span>
+            </div>
           </div>
         );
       })}
@@ -326,30 +333,27 @@ function TimelineMini({ timeline, C }: { timeline: BoneMappingData['timeline']; 
   const maxScore = 100;
   return (
     <div>
-      <div style={{ fontSize:10, color:C.textMut, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:"'DM Mono',monospace", marginBottom:6 }}>
-        Timeline de impactos ({timeline.length} golpes)
+      <div style={{ fontSize:11, color:C.textMut, textTransform:'uppercase', letterSpacing:'0.1em', fontFamily:"'DM Mono',monospace", marginBottom:10, fontWeight:700 }}>
+        Timeline de sesión ({timeline.length} golpes)
       </div>
-      <div style={{ display:'flex', alignItems:'flex-end', height:36, gap:1, background:C.bg, borderRadius:4, padding:'4px 4px 0', overflow:'hidden' }}>
+      <div style={{ display:'flex', alignItems:'flex-end', height:48, gap:1.5, background:C.bg, borderRadius:6, padding:'6px 8px 0', overflow:'hidden' }}>
         {timeline.map((t, i) => {
-          const h = Math.max(4, (t.score / maxScore) * 32);
+          const h = Math.max(6, (t.score / maxScore) * 42);
           const color = t.score >= 80 ? '#10B981' : t.score >= 60 ? '#3B82F6' : t.score >= 40 ? '#F97316' : '#EF4444';
           return (
-            <div key={i} title={`t=${t.timestamp?.toFixed(1)}s · score=${t.score}`}
-              style={{ flex:1, height:h, background:color, borderRadius:'1px 1px 0 0', opacity:0.8, transition:'height 0.3s', cursor:'default' }}
+            <div key={i} title={`Golpe ${i+1}: t=${t.timestamp?.toFixed(1)}s · score=${t.score}`}
+              style={{ flex:1, height:h, background:color, borderRadius:'3px 3px 0 0', opacity:0.85, transition:'all 0.3s ease', cursor:'pointer', hover:{opacity:1} }}
             />
           );
         })}
       </div>
-      <div style={{ display:'flex', justifyContent:'space-between', marginTop:3, fontSize:9, color:C.textMut, fontFamily:"'DM Mono',monospace" }}>
-        <span>inicio</span>
-        <span>fin</span>
+      <div style={{ display:'flex', justifyContent:'space-between', marginTop:6, fontSize:9, color:C.textMut, fontFamily:"'DM Mono',monospace", fontWeight:500 }}>
+        <span>Inicio de sesión</span>
+        <span>Fin de sesión</span>
       </div>
-      <div style={{ fontSize:10, color:C.textSec, marginTop:8, lineHeight:1.4, padding:'8px', background:C.border+'20', borderRadius:4 }}>
-        <strong>Cómo leer el timeline:</strong>
-        <br/>• <strong>Altura de la barra</strong> = Score del golpe (más alto = mejor)
-        <br/>• <strong>Posición horizontal</strong> = Momento en la sesión (de inicio a fin)
-        <br/>• <strong>Colores</strong>: Verde ≥80 | Azul ≥60 | Naranja ≥40 | Rojo &lt;40
-        <br/>Permite visualizar la consistencia de tu desempeño durante la sesión.
+      <div style={{ fontSize:10, color:C.textSec, marginTop:10, lineHeight:1.6, padding:'12px 14px', background:C.border+'15', borderRadius:8, borderLeft:`3px solid #3B82F6` }}>
+        📈 <strong>Altura</strong> = Score del golpe  |  <strong>Posición</strong> = Momento en sesión
+        <br/>Colores: <span style={{color:'#10B981', fontWeight:600}}>≥80</span> | <span style={{color:'#3B82F6', fontWeight:600}}>≥60</span> | <span style={{color:'#F97316', fontWeight:600}}>≥40</span> | <span style={{color:'#EF4444', fontWeight:600}}>crítico</span>
       </div>
     </div>
   );
@@ -401,38 +405,62 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
     s === 'forehand' ? 'Forehand' : s === 'backhand' ? 'Backhand' : s === 'saque' ? 'Saque' : s;
 
   const card: React.CSSProperties = {
-    background: C.surface, border:`1px solid ${C.border}`,
-    borderRadius:10, padding:'16px 20px',
+    background: C.surface,
+    border:`1px solid ${C.border}`,
+    borderRadius:12,
+    padding:'20px',
+  };
+
+  const sectionLabel: React.CSSProperties = {
+    fontSize: 11,
+    color: C.textMut,
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+    fontFamily: "'DM Mono', monospace",
+    fontWeight: 600,
+    marginBottom: 12,
   };
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
 
-      {/* Header row: stroke selector + meta */}
-      <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+      {/* Header: Stroke selector + session info */}
+      <div style={{ display:'flex', flexDirection:'column', gap:20, marginBottom:24 }}>
         <div>
-          <div style={{ fontSize:10, color:C.textMut, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:"'DM Mono',monospace", marginBottom:8 }}>
-            Selecciona tipo de golpe
-          </div>
-          <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+          <div style={sectionLabel}>Tipo de golpe</div>
+          <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
             {strokes.map(s => (
-              <button key={s} onClick={() => { setActiveStroke(s); setActiveMode('representative'); }}
+              <button key={s} onClick={() => { setActiveStroke(s); setActiveMode('best'); }}
                 style={{
-                  padding:'10px 20px', borderRadius:8, cursor:'pointer', fontSize:14, fontWeight:600,
-                  fontFamily:"'DM Sans',sans-serif", transition:'all 0.2s',
+                  padding:'12px 24px',
+                  borderRadius:8,
+                  cursor:'pointer',
+                  fontSize:14,
+                  fontWeight: stroke === s ? 700 : 600,
+                  fontFamily:"'DM Sans',sans-serif",
+                  transition:'all 0.25s ease',
                   border:`2px solid ${stroke===s ? '#10B981' : C.border}`,
-                  background: stroke===s ? '#10B981' : C.surface,
-                  color: stroke===s ? '#0f1923' : C.textSec,
-                  boxShadow: stroke===s ? `0 4px 12px rgba(16, 185, 129, 0.3)` : 'none',
+                  background: stroke===s ? '#10B98118' : 'transparent',
+                  color: stroke===s ? '#10B981' : C.textSec,
+                  boxShadow: stroke===s ? `0 0 20px rgba(16, 185, 129, 0.25)` : 'none',
+                  transform: stroke===s ? 'scale(1.02)' : 'scale(1)',
                 }}>
                 {strokeLabel(s)}
               </button>
             ))}
           </div>
         </div>
-        <div style={{ display:'flex', gap:16, fontSize:11, color:C.textMut, fontFamily:"'DM Mono',monospace" }}>
-          <span>{meta?.total_impacts ?? '—'} impactos detectados</span>
-          <span>{meta?.impacts_with_pose ?? '—'} con pose 3D</span>
+
+        {/* Session stats */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+          <div style={{ ...card, padding:'16px' }}>
+            <div style={{ fontSize:10, color:C.textMut, marginBottom:6 }}>IMPACTOS DETECTADOS</div>
+            <div style={{ fontSize:24, fontWeight:700, color:'#10B981' }}>{meta?.total_impacts ?? '—'}</div>
+          </div>
+          <div style={{ ...card, padding:'16px' }}>
+            <div style={{ fontSize:10, color:C.textMut, marginBottom:6 }}>CON POSE 3D</div>
+            <div style={{ fontSize:24, fontWeight:700, color:'#3B82F6' }}>{meta?.impacts_with_pose ?? '—'}</div>
+          </div>
         </div>
       </div>
 
@@ -494,38 +522,43 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
 
           {/* Mode indicator */}
-          <div style={{ ...card, background: activeMode === 'best' ? '#10B98110' : activeMode === 'worst' ? '#EF444410' : '#3B82F610', borderColor: activeMode === 'best' ? '#10B981' : activeMode === 'worst' ? '#EF4444' : '#3B82F6' }}>
-            <div style={{ fontSize:9, color:C.textMut, fontFamily:"'DM Mono',monospace", textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>
-              Tipo de golpe mostrado
+          {currentMode && (
+            <div style={{
+              ...card,
+              background: activeMode === 'best' ? '#10B98112' : activeMode === 'worst' ? '#EF444412' : '#3B82F612',
+              borderColor: activeMode === 'best' ? '#10B98160' : activeMode === 'worst' ? '#EF444460' : '#3B82F660',
+              borderWidth: 2,
+            }}>
+              <div style={{ fontSize:10, color:C.textMut, fontFamily:"'DM Mono',monospace", textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:8, fontWeight:700 }}>
+                Golpe analizado
+              </div>
+              <div style={{ fontSize:13, fontWeight:700, color: activeMode === 'best' ? '#10B981' : activeMode === 'worst' ? '#EF4444' : '#3B82F6', marginBottom:6 }}>
+                {activeMode === 'best' ? '⭐ Mejor golpe' : activeMode === 'worst' ? '⚠️ Mayor desviación' : '📊 Promedio top-5'}
+              </div>
+              <div style={{ fontSize:11, color:C.textSec, lineHeight:1.6 }}>
+                {activeMode === 'best'
+                  ? 'Golpe mejor ejecutado en momento exacto del impacto.'
+                  : activeMode === 'worst'
+                  ? 'Golpe con mayor desviación vs ATP en el impacto.'
+                  : 'Promedio de 5 mejores golpes. Selecciona "Mejor golpe" para ver un golpe real individual.'}
+              </div>
             </div>
-            <div style={{ fontSize:12, fontWeight:600, color: activeMode === 'best' ? '#10B981' : activeMode === 'worst' ? '#EF4444' : '#3B82F6', marginBottom:4 }}>
-              {activeMode === 'best' ? '✓ Mejor golpe (golpe real)' : activeMode === 'worst' ? '⚠ Mayor desviación (golpe real)' : '○ Promedio top-5 (no es un golpe real)'}
-            </div>
-            <div style={{ fontSize:10, color:C.textSec, lineHeight:1.5 }}>
-              {activeMode === 'best'
-                ? 'Mostrando el golpe mejor ejecutado de la sesión en el momento exacto del impacto.'
-                : activeMode === 'worst'
-                ? 'Mostrando el golpe con más desviación respecto a ATP en el momento del impacto.'
-                : 'Promedio de los 5 mejores golpes por velocidad. Para ver un golpe real, selecciona "Mejor golpe".'}
-            </div>
-          </div>
+          )}
 
           {/* Grip & Hand Info */}
-          <div style={{ ...card, background: C.surface }}>
-            <div style={{ fontSize:10, color:C.textMut, fontFamily:"'DM Mono',monospace", textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>
-              Técnica de golpe
-            </div>
-            <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
-              <div>
-                <div style={{ fontSize:9, color:C.textMut, marginBottom:2 }}>Mano dominante</div>
-                <div style={{ fontSize:13, fontWeight:600, color:C.textSec }}>
-                  {meta?.dominant_hand === 'right' ? '🎾 Derecha' : '🎾 Izquierda'}
+          <div style={{ ...card, background: C.bg, borderColor: C.border }}>
+            <div style={sectionLabel}>Técnica de golpe</div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:12 }}>
+              <div style={{ padding:'12px', background:C.surface, borderRadius:8, borderLeft:`3px solid #3B82F6` }}>
+                <div style={{ fontSize:9, color:C.textMut, marginBottom:4, fontFamily:"'DM Mono',monospace", fontWeight:700 }}>MANO DOMINANTE</div>
+                <div style={{ fontSize:16, fontWeight:700, color:'#3B82F6' }}>
+                  {meta?.dominant_hand === 'right' ? '👉 Derecha' : '👈 Izquierda'}
                 </div>
               </div>
               {stroke === 'forehand' && meta?.grip_type && (
-                <div>
-                  <div style={{ fontSize:9, color:C.textMut, marginBottom:2 }}>Grip (Forehand)</div>
-                  <div style={{ fontSize:13, fontWeight:600, color:C.textSec }}>
+                <div style={{ padding:'12px', background:C.surface, borderRadius:8, borderLeft:`3px solid #10B981` }}>
+                  <div style={{ fontSize:9, color:C.textMut, marginBottom:4, fontFamily:"'DM Mono',monospace", fontWeight:700 }}>GRIP (FOREHAND)</div>
+                  <div style={{ fontSize:15, fontWeight:700, color:'#10B981' }}>
                     {meta.grip_type === 'eastern' ? '→ Eastern' :
                      meta.grip_type === 'semi_western' ? '↗ Semi-Western' :
                      meta.grip_type === 'western' ? '↖ Western' : meta.grip_type}
@@ -533,9 +566,9 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
                 </div>
               )}
               {stroke === 'backhand' && meta?.bh_variant && (
-                <div>
-                  <div style={{ fontSize:9, color:C.textMut, marginBottom:2 }}>Tipo de Backhand</div>
-                  <div style={{ fontSize:13, fontWeight:600, color:C.textSec }}>
+                <div style={{ padding:'12px', background:C.surface, borderRadius:8, borderLeft:`3px solid #F97316` }}>
+                  <div style={{ fontSize:9, color:C.textMut, marginBottom:4, fontFamily:"'DM Mono',monospace", fontWeight:700 }}>TIPO DE BACKHAND</div>
+                  <div style={{ fontSize:15, fontWeight:700, color:'#F97316' }}>
                     {meta.bh_variant === 'topspin' ? '🔄 Topspin' : '➖ Slice'}
                   </div>
                 </div>
@@ -582,14 +615,10 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
           {/* Joint analysis */}
           {currentMode?.analysis_delta?.length > 0 && (
             <div style={card}>
-              <div style={{ fontSize:10, color:C.textMut, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:"'DM Mono',monospace", marginBottom:10 }}>
-                Análisis por articulación
-              </div>
-              <div style={{ fontSize:10, color:C.textSec, marginBottom:10, lineHeight:1.5, padding:'8px', background:C.border+'20', borderRadius:4 }}>
-                <strong>Porcentaje de desviación:</strong> Mide cuánto se aleja tu ángulo del rango ideal ATP.
-                <br/>• <span style={{color:'#3B82F6'}}>0%</span> = Dentro del rango ideal
-                <br/>• <span style={{color:'#F97316'}}>10-20%</span> = Fuera del rango (ajustar)
-                <br/>• <span style={{color:'#EF4444'}}>+20%</span> = Muy fuera (crítico)
+              <div style={sectionLabel}>Análisis de articulaciones</div>
+              <div style={{ fontSize:11, color:C.textSec, marginBottom:14, lineHeight:1.6, padding:'12px 14px', background:C.border+'15', borderRadius:8, borderLeft:`3px solid #10B981` }}>
+                📊 <strong>Desviación %</strong>: Diferencia vs rango ATP
+                <br/>• <span style={{color:'#3B82F6', fontWeight:600}}>0%</span> ideal  • <span style={{color:'#F97316', fontWeight:600}}>10-20%</span> ajustar  • <span style={{color:'#EF4444', fontWeight:600}}>+20%</span> crítico
               </div>
               <JointCards delta={currentMode.analysis_delta} C={C}/>
             </div>
