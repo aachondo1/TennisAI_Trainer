@@ -25,13 +25,15 @@ interface BoneMode {
 
 interface BoneMappingData {
   session_meta: {
-    total_impacts:     number;
-    impacts_with_pose: number;
-    dominant_hand:     string;
-    stroke_type:       string;
-    grip_type?:        string;        // eastern | semi_western | western
-    bh_variant?:       string;        // topspin | slice (backhand only)
-    stroke_counts:     Record<string, number>;
+    total_impacts:      number;
+    impacts_with_pose:  number;
+    quality_score?:     number;
+    has_landmarks?:     boolean;
+    dominant_hand:      string;
+    stroke_type:        string;
+    grip_type?:         string;        // eastern | semi_western | western
+    bh_variant?:        string;        // topspin | slice (backhand only)
+    stroke_counts?:     Record<string, number>;
   };
   modes: {
     representative: BoneMode;
