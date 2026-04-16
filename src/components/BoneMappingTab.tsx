@@ -543,6 +543,12 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
               <div style={{ fontSize:10, color:C.textMut, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:"'DM Mono',monospace", marginBottom:10 }}>
                 Análisis por articulación
               </div>
+              <div style={{ fontSize:10, color:C.textSec, marginBottom:10, lineHeight:1.5, padding:'8px', background:C.border+'20', borderRadius:4 }}>
+                <strong>Porcentaje de desviación:</strong> Mide cuánto se aleja tu ángulo del rango ideal ATP.
+                <br/>• <span style={{color:'#3B82F6'}}>0%</span> = Dentro del rango ideal
+                <br/>• <span style={{color:'#F97316'}}>10-20%</span> = Fuera del rango (ajustar)
+                <br/>• <span style={{color:'#EF4444'}}>+20%</span> = Muy fuera (crítico)
+              </div>
               <JointCards delta={currentMode.analysis_delta} C={C}/>
             </div>
           )}
