@@ -344,6 +344,13 @@ function TimelineMini({ timeline, C }: { timeline: BoneMappingData['timeline']; 
         <span>inicio</span>
         <span>fin</span>
       </div>
+      <div style={{ fontSize:10, color:C.textSec, marginTop:8, lineHeight:1.4, padding:'8px', background:C.border+'20', borderRadius:4 }}>
+        <strong>Cómo leer el timeline:</strong>
+        <br/>• <strong>Altura de la barra</strong> = Score del golpe (más alto = mejor)
+        <br/>• <strong>Posición horizontal</strong> = Momento en la sesión (de inicio a fin)
+        <br/>• <strong>Colores</strong>: Verde ≥80 | Azul ≥60 | Naranja ≥40 | Rojo &lt;40
+        <br/>Permite visualizar la consistencia de tu desempeño durante la sesión.
+      </div>
     </div>
   );
 }
