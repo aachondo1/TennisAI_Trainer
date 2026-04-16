@@ -468,7 +468,7 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
       <div style={{ display:'grid', gridTemplateColumns:'2fr 380px', gap:16, alignItems:'start' }}>
 
         {/* SVG Canvas */}
-        <div style={{ ...card, padding:0, overflow:'hidden', background:'#0f1117' }}>
+        <div style={{ ...card, padding:0, overflow:'hidden', background:'#0f1117', display:'flex', flexDirection:'column' }}>
           {/* Mode selector */}
           <div style={{ display:'flex', borderBottom:`1px solid #2a2d3a`, padding:'10px 16px', gap:6 }}>
             {modeConfig.map(m => (
@@ -494,23 +494,45 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
           </div>
 
           {currentMode ? (
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, height: '100%' }}>
-              {/* Left: Silhouette */}
-              <div style={{ ...card, padding:0, overflow:'hidden', background:'#0f1117' }}>
-                <div style={{ padding:'8px 12px', borderBottom:`1px solid #2a2d3a`, fontSize:9, color:'#8a8ea8', fontFamily:"'DM Mono',monospace", textTransform:'uppercase', letterSpacing:'0.05em' }}>
-                  Silueta del jugador
+            <>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, flex:1 }}>
+                {/* Left: Silhouette */}
+                <div style={{ ...card, padding:0, overflow:'hidden', background:'#0f1117' }}>
+                  <div style={{ padding:'8px 12px', borderBottom:`1px solid #2a2d3a`, fontSize:9, color:'#8a8ea8', fontFamily:"'DM Mono',monospace", textTransform:'uppercase', letterSpacing:'0.05em' }}>
+                    Silueta del jugador
+                  </div>
+                  <SilhouetteSVG pose={currentMode.pose} C={C}/>
                 </div>
-                <SilhouetteSVG pose={currentMode.pose} C={C}/>
+
+                {/* Right: Skeleton with angles */}
+                <div style={{ ...card, padding:0, overflow:'hidden', background:'#0f1117' }}>
+                  <div style={{ padding:'8px 12px', borderBottom:`1px solid #2a2d3a`, fontSize:9, color:'#8a8ea8', fontFamily:"'DM Mono',monospace", textTransform:'uppercase', letterSpacing:'0.05em' }}>
+                    Ángulos vs ATP
+                  </div>
+                  <SkeletonSVG mode={currentMode} C={C}/>
+                </div>
               </div>
 
-              {/* Right: Skeleton with angles */}
-              <div style={{ ...card, padding:0, overflow:'hidden', background:'#0f1117' }}>
-                <div style={{ padding:'8px 12px', borderBottom:`1px solid #2a2d3a`, fontSize:9, color:'#8a8ea8', fontFamily:"'DM Mono',monospace", textTransform:'uppercase', letterSpacing:'0.05em' }}>
-                  Ángulos vs ATP
+              {/* Legend - positioned below skeleton visualization */}
+              <div style={{ display:'flex', flexDirection:'column', gap:6, padding:'12px 16px', borderTop:`1px solid #2a2d3a` }}>
+                <div style={{ fontSize:10, color:C.textMut, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:"'DM Mono',monospace" }}>
+                  Leyenda
                 </div>
-                <SkeletonSVG mode={currentMode} C={C}/>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                  {[
+                    { color:'#3B82F6', label:'Normal (< 10%)' },
+                    { color:'#F97316', label:'Desviación (> 10%)' },
+                    { color:'#EF4444', label:'Crítico (> 20%)' },
+                    { color:'#F59E0B', label:'Punto de impacto' },
+                  ].map(({ color, label }) => (
+                    <div key={label} style={{ display:'flex', alignItems:'center', gap:7, fontSize:10, color:C.textSec }}>
+                      <span style={{ width:8, height:8, borderRadius:'50%', background:color, flexShrink:0 }}/>
+                      {label}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            </>
           ) : (
             <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:VH, color:'#8a8ea8', fontSize:13 }}>
               Sin datos para este modo
@@ -630,24 +652,6 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
               <TimelineMini timeline={bmData.timeline} C={C}/>
             </div>
           )}
-
-          {/* Legend */}
-          <div style={{ ...card, display:'flex', flexDirection:'column', gap:6 }}>
-            <div style={{ fontSize:10, color:C.textMut, textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:"'DM Mono',monospace", marginBottom:4 }}>
-              Leyenda
-            </div>
-            {[
-              { color:'#3B82F6', label:'Normal (< 10% desviación)' },
-              { color:'#F97316', label:'Desviación (> 10%)' },
-              { color:'#EF4444', label:'Crítico (> 20%)' },
-              { color:'#F59E0B', label:'Punto de impacto (muñeca)' },
-            ].map(({ color, label }) => (
-              <div key={label} style={{ display:'flex', alignItems:'center', gap:7, fontSize:11, color:C.textSec }}>
-                <span style={{ width:8, height:8, borderRadius:'50%', background:color, flexShrink:0 }}/>
-                {label}
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>
