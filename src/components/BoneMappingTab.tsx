@@ -29,6 +29,8 @@ interface BoneMappingData {
     impacts_with_pose: number;
     dominant_hand:     string;
     stroke_type:       string;
+    grip_type?:        string;        // eastern | semi_western | western
+    bh_variant?:       string;        // topspin | slice (backhand only)
     stroke_counts:     Record<string, number>;
   };
   modes: {
@@ -498,6 +500,39 @@ export function BoneMappingTab({ session, C }: { session: any; C: Record<string,
                 : activeMode === 'worst'
                 ? 'Mostrando el golpe con más desviación respecto a ATP en el momento del impacto.'
                 : 'Promedio de los 5 mejores golpes por velocidad. Para ver un golpe real, selecciona "Mejor golpe".'}
+            </div>
+          </div>
+
+          {/* Grip & Hand Info */}
+          <div style={{ ...card, background: C.surface }}>
+            <div style={{ fontSize:10, color:C.textMut, fontFamily:"'DM Mono',monospace", textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>
+              Técnica de golpe
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+              <div>
+                <div style={{ fontSize:9, color:C.textMut, marginBottom:2 }}>Mano dominante</div>
+                <div style={{ fontSize:13, fontWeight:600, color:C.textSec }}>
+                  {meta?.dominant_hand === 'right' ? '🎾 Derecha' : '🎾 Izquierda'}
+                </div>
+              </div>
+              {stroke === 'forehand' && meta?.grip_type && (
+                <div>
+                  <div style={{ fontSize:9, color:C.textMut, marginBottom:2 }}>Grip (Forehand)</div>
+                  <div style={{ fontSize:13, fontWeight:600, color:C.textSec }}>
+                    {meta.grip_type === 'eastern' ? '→ Eastern' :
+                     meta.grip_type === 'semi_western' ? '↗ Semi-Western' :
+                     meta.grip_type === 'western' ? '↖ Western' : meta.grip_type}
+                  </div>
+                </div>
+              )}
+              {stroke === 'backhand' && meta?.bh_variant && (
+                <div>
+                  <div style={{ fontSize:9, color:C.textMut, marginBottom:2 }}>Tipo de Backhand</div>
+                  <div style={{ fontSize:13, fontWeight:600, color:C.textSec }}>
+                    {meta.bh_variant === 'topspin' ? '🔄 Topspin' : '➖ Slice'}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
